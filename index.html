@@ -661,14 +661,32 @@ function renderFormGenerador(){
 function generarRutina({dias, objetivo, nivel, duracion, prioridad}){
   const repsPorObjetivo = {fuerza:'4x5', masa:'4x10', recomp:'3x12'};
   const exPorDia = {30:3,45:4,60:5,75:6,90:7}[duracion] || 5;
+  const nombreGrupo = {pecho:'Pecho', espalda:'Espalda', biceps:'Bíceps', triceps:'Tríceps', antebrazos:'Antebrazos', trapecios:'Trapecios'};
+  const offsetPorGrupo = {}; // para no repetir siempre los mismos ejercicios entre día 1 y día 2 del mismo tipo
+  function tomarDeGrupo(grupo, cantidad){
+    const pool = EJERCICIOS.filter(e=>e.grupo===grupo);
+    if(pool.length===0 || cantidad<=0) return [];
+    const offset = offsetPorGrupo[grupo] || 0;
+    const seleccion = [];
+    for(let i=0;i<cantidad;i++) seleccion.push(pool[(offset+i) % pool.length]);
+    offsetPorGrupo[grupo] = offset + cantidad;
+    return seleccion;
+  }
   const diasArr = [];
   for(let i=0;i<dias;i++){
     const esEmpuje = i%2===0;
     const gruposDia = esEmpuje ? ['pecho','triceps'] : ['espalda','biceps'];
-    let pool = EJERCICIOS.filter(e=>gruposDia.includes(e.grupo));
-    if(prioridad && prioridad!=='ninguna'){ const extra = EJERCICIOS.filter(e=>e.grupo===prioridad); pool = extra.concat(pool); }
-    const elegidos = pool.slice(0, exPorDia);
-    diasArr.push({ nombre: (esEmpuje?'Empuje ':'Tirón ') + (Math.floor(i/2)+1), ejercicios: elegidos.map(e=>({exId:e.id, target: repsPorObjetivo[objetivo] || '3x10'})) });
+    // repartimos los ejercicios del día entre los dos grupos musculares (60/40), nunca todo a uno solo
+    let cantMayor = Math.max(1, Math.ceil(exPorDia*0.6));
+    let cantMenor = Math.max(1, exPorDia - cantMayor);
+    if(cantMayor + cantMenor > exPorDia) cantMayor = exPorDia - cantMenor;
+    let seleccionados = [ ...tomarDeGrupo(gruposDia[0], cantMayor), ...tomarDeGrupo(gruposDia[1], cantMenor) ];
+    if(prioridad && prioridad!=='ninguna' && !gruposDia.includes(prioridad)){
+      seleccionados = [...tomarDeGrupo(prioridad,1), ...seleccionados];
+    }
+    const numero = Math.floor(i/2)+1;
+    const etiquetaGrupos = gruposDia.map(g=>nombreGrupo[g]).join(' + ');
+    diasArr.push({ nombre: `${esEmpuje?'Empuje':'Tirón'} ${numero} (${etiquetaGrupos})`, ejercicios: seleccionados.map(e=>({exId:e.id, target: repsPorObjetivo[objetivo] || '3x10'})) });
   }
   return {id:'gen_'+Date.now(), nombre:`Rutina generada · ${dias}d · ${objetivo}`, dias:diasArr};
 }
@@ -1206,3 +1224,4 @@ async function cargarGifDetalle(id){
 </script>
 </body>
 </html>
+
