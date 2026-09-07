@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>FORJA — Entrenamiento & Nutrición</title>
+<style>
+  :root{
+    --bg:#0E0F11; --surface:#17191C; --surface2:#1F2226; --surface3:#282C31; --line:#2A2E33;
+    --text:#F4F5F3; --muted:#8D939B; --primary:#C8FF4D; --danger:#FF5C6E; --success:#4DE28B; --info:#5BC0FF;
+  }
+  body[data-theme="light"]{
+    --bg:#F3F4F1; --surface:#FFFFFF; --surface2:#EEF0EB; --surface3:#E2E5DE; --line:#D8DBD3;
+    --text:#15171A; --muted:#5B6067; --primary:#3F7A1F;
+  }
+  body[data-theme="light"] .btn-primary, body[data-theme="light"] .chip.active, body[data-theme="light"] .subtabs button.active{ color:#fff; }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; padding-bottom:74px; min-height:100vh;}
+  .wrap{max-width:480px; margin:0 auto; padding:14px 16px 8px;}
+  h1,h2,h3{margin:0; font-weight:800; letter-spacing:-0.02em;}
+  ::-webkit-scrollbar{display:none;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; padding:16px 16px 8px; max-width:480px; margin:0 auto; position:sticky; top:0; background:var(--bg); z-index:5;}
+  .brand{font-size:19px; font-weight:800; letter-spacing:-0.03em;}
+  .brand span{color:var(--primary);}
+  .streak{font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px;}
+  .card{background:var(--surface); border-radius:10px; padding:16px; margin-bottom:12px; border:1px solid var(--line);}
+  .card.accent{border-color:var(--primary); box-shadow:0 0 0 1px var(--primary) inset;}
+  .card h3{font-size:12.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:12px; font-weight:700;}
+  .bignum{font-size:32px; font-weight:800; letter-spacing:-0.02em; font-variant-numeric:tabular-nums;}
+  .bignum small{font-size:13px; color:var(--muted); font-weight:600;}
+  .bar-row{margin-bottom:10px;}
+  .bar-label{display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px; color:var(--muted);}
+  .bar-label b{color:var(--text); font-weight:700;}
+  .bar-track{height:7px; background:var(--surface2); border-radius:20px; overflow:hidden;}
+  .bar-fill{height:100%; border-radius:20px; transition:width .3s;}
+  input, select, textarea{width:100%; background:var(--surface2); border:1px solid var(--line); color:var(--text); padding:11px 12px; border-radius:8px; font-size:15px; margin-bottom:8px; font-family:inherit;}
+  input:focus, select:focus{outline:none; border-color:var(--primary);}
+  label{font-size:12px; color:var(--muted); display:block; margin-bottom:4px;}
+  .row{display:flex; gap:8px;}
+  .row > *{flex:1;}
+  button{font-family:inherit; font-weight:700; font-size:14.5px; border:none; border-radius:8px; padding:12px 14px; cursor:pointer;}
+  button:disabled{opacity:.35; pointer-events:none;}
+  .btn-primary{background:var(--primary); color:#0E0F11; width:100%;}
+  .btn-primary:active{opacity:.8;}
+  .btn-ghost{background:var(--surface2); color:var(--text); border:1px solid var(--line);}
+  .btn-sm{padding:7px 10px; font-size:12.5px;}
+  .btn-danger{background:transparent; color:var(--danger); border:1px solid var(--danger);}
+  .btn-icon{width:auto; flex:0 0 auto;}
+  .chips{display:flex; gap:7px; overflow-x:auto; padding-bottom:4px; margin-bottom:12px;}
+  .chip{flex:0 0 auto; background:var(--surface2); color:var(--muted); border:1px solid var(--line); border-radius:20px; padding:7px 13px; font-size:12.5px; font-weight:600; white-space:nowrap; cursor:pointer;}
+  .chip.active{background:var(--primary); color:#0E0F11; border-color:var(--primary);}
+  .ex-card{display:flex; gap:12px; align-items:center; padding:11px; background:var(--surface2); border-radius:10px; margin-bottom:8px; cursor:pointer; border:1px solid transparent;}
+  .ex-card:active{border-color:var(--primary);}
+  .ex-avatar{width:44px; height:44px; border-radius:8px; background:var(--surface3); display:flex; align-items:center; justify-content:center; font-size:18px; flex:0 0 auto;}
+  .ex-info{flex:1; min-width:0;}
+  .ex-name{font-size:14.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .ex-meta{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .ex-fav{color:var(--muted); font-size:18px; flex:0 0 auto; background:none; padding:4px;}
+  .ex-fav.active{color:var(--primary);}
+  .tag{display:inline-block; font-size:11px; padding:3px 9px; border-radius:20px; background:var(--surface3); color:var(--muted); margin:0 5px 5px 0;}
+  .tag.primary{background:var(--primary); color:#0E0F11;}
+  .gif-box{width:100%; aspect-ratio:1/1; max-height:280px; background:var(--surface2); border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden;}
+  .gif-box img{width:100%; height:100%; object-fit:contain;}
+  .gif-box .placeholder{color:var(--muted); font-size:12.5px; text-align:center; padding:20px;}
+  .subtabs{display:flex; gap:6px; margin-bottom:14px;}
+  .subtabs button{flex:1; background:var(--surface2); color:var(--muted); border:1px solid var(--line);}
+  .subtabs button.active{background:var(--primary); color:#0E0F11; border-color:var(--primary);}
+  .meal-item{display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid var(--line); font-size:14px;}
+  .meal-item:last-child{border-bottom:none;}
+  .meal-item .macros{font-size:11.5px; color:var(--muted);}
+  .food-result{padding:10px; border-bottom:1px solid var(--line); cursor:pointer;}
+  .food-result:active{background:var(--surface2);}
+  .food-result .fname{font-size:14px; font-weight:600;}
+  .food-result .fmacros{font-size:11.5px; color:var(--muted); margin-top:2px;}
+  .empty{color:var(--muted); font-size:13.5px; text-align:center; padding:22px 10px;}
+  .empty .big{font-size:26px; margin-bottom:6px;}
+  .chart-wrap{width:100%; overflow-x:auto;}
+  .divider{height:1px; background:var(--line); margin:14px 0;}
+  .grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+  .backbtn{background:none; color:var(--muted); font-size:13px; padding:6px 0; margin-bottom:6px;}
+  .step{font-size:13.5px; line-height:1.5; margin-bottom:8px; padding-left:18px; position:relative;}
+  .step::before{content:"•"; position:absolute; left:2px; color:var(--primary);}
+  .bottomnav{position:fixed; bottom:0; left:0; right:0; background:var(--surface); border-top:1px solid var(--line); display:flex; z-index:10;}
+  .bottomnav button{flex:1; background:none; border:none; border-radius:0; color:var(--muted); padding:10px 2px 8px; font-size:10.5px; display:flex; flex-direction:column; align-items:center; gap:3px;}
+  .bottomnav button.active{color:var(--primary);}
+  .bottomnav svg{width:19px; height:19px;}
+  .badge-soon{font-size:9px; background:var(--surface3); color:var(--muted); padding:1px 6px; border-radius:10px; margin-left:5px;}
+  .day-block{background:var(--surface2); border-radius:10px; padding:10px 12px; margin-bottom:10px;}
+  .day-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; font-size:14px; gap:8px;}
+  .exrow-mini{display:flex; justify-content:space-between; align-items:center; gap:6px; font-size:13px; padding:6px 0; border-bottom:1px solid var(--line);}
+  .exrow-mini:last-child{border-bottom:none;}
+  .exrow-mini input{width:60px; margin-bottom:0; padding:6px 8px; font-size:13px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">FOR<span>JA</span></div>
+  <div class="streak" id="streakEl">día 1 · 60</div>
+</div>
+
+<div class="wrap" id="app"></div>
+
+<div class="bottomnav">
+  <button data-tab="inicio" class="navbtn active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+    Inicio
+  </button>
+  <button data-tab="entrenar" class="navbtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11M21 21l-1-1M3 3l1 1M18.5 3.5l-15 15M4 20l1.5-1.5M18.5 5.5L20 4"/></svg>
+    Entrenar
+  </button>
+  <button data-tab="nutricion" class="navbtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/></svg>
+    Nutrición
+  </button>
+  <button data-tab="progreso" class="navbtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18M7 14l4-4 3 3 5-6"/></svg>
+    Progreso
+  </button>
+  <button data-tab="perfil" class="navbtn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0116 0v1"/></svg>
+    Perfil
+  </button>
+</div>
+
+<script>
+/* =====================================================================
+   FORJA — Fase 1 + 2 + 3 + 4 + 5 (rutinas, generador, modo entrenamiento,
+   historial/PRs/volumen, racha, modo claro/oscuro, código de barras real).
+   Pendiente (explicado al final del chat): drag-and-drop de reordenar,
+   videos en HD (se usan GIFs reales), escaneo con cámara (necesita
+   permisos nativos no disponibles en este entorno), unidades lb,
+   exportar/compartir, funciones sociales, wearables, IA generativa.
+===================================================================== */
+
+const DEFAULT_PERFIL = { peso_inicial: 96, altura: 192, edad: 19, fecha_inicio: new Date().toISOString().slice(0,10), kcal: 2200, prot: 210, carb: 170, grasa: 75 };
+
+const EJERCICIOS = [
+  {id:'pec01', nombre:'Press banca con barra', grupo:'pecho', secundarios:['tríceps','hombro anterior'], equipo:'Barra', patron:'Empuje horizontal', dificultad:'Intermedio', pasos:['Acostate en el banco con los pies firmes en el piso.','Agarrá la barra un poco más ancho que los hombros y bajala controlada al pecho.','Empujá hasta extender los brazos sin trabar los codos de golpe.'], errores:['Rebotar la barra en el pecho.','Levantar la cadera del banco.'], consejos:['Retraé las escápulas antes de empezar.','Controlá más la bajada que la subida.'], variantes:['Press banca mancuernas','Press inclinado barra','Press en Smith']},
+  {id:'pec02', nombre:'Press banca con mancuernas', grupo:'pecho', secundarios:['tríceps','hombro anterior'], equipo:'Mancuernas', patron:'Empuje horizontal', dificultad:'Intermedio', pasos:['Sentate con una mancuerna en cada muslo y recostate llevándolas al pecho.','Empujá ambas mancuernas hacia arriba sin chocarlas.','Bajá controlado hasta sentir estiramiento en el pecho.'], errores:['Abrir demasiado los codos.','Usar rango muy corto.'], consejos:['Mayor rango de movimiento que con barra.','Girá levemente las muñecas arriba para contraer mejor.'], variantes:['Press banca barra','Press inclinado mancuernas']},
+  {id:'pec03', nombre:'Press inclinado con barra', grupo:'pecho', secundarios:['hombro anterior','tríceps'], equipo:'Barra', patron:'Empuje horizontal', dificultad:'Intermedio', pasos:['Ajustá el banco a 30-45°.','Bajá la barra a la parte alta del pecho.','Empujá hacia arriba y levemente atrás.'], errores:['Inclinar el banco demasiado.','Bajar la barra al cuello.'], consejos:['30° es suficiente para enfatizar pecho alto.'], variantes:['Press inclinado mancuernas','Press declinado']},
+  {id:'pec04', nombre:'Press inclinado con mancuernas', grupo:'pecho', secundarios:['hombro anterior','tríceps'], equipo:'Mancuernas', patron:'Empuje horizontal', dificultad:'Intermedio', pasos:['Banco a 30°, mancuernas a la altura del pecho alto.','Empujá hacia arriba juntando las mancuernas arriba.','Bajá controlado.'], errores:['Perder el arco natural de la muñeca.'], consejos:['Buena opción para asimetrías entre lados.'], variantes:['Press inclinado barra']},
+  {id:'pec05', nombre:'Press declinado con barra', grupo:'pecho', secundarios:['tríceps'], equipo:'Barra', patron:'Empuje horizontal', dificultad:'Intermedio', pasos:['Asegurá las piernas en el banco declinado.','Bajá la barra a la parte baja del pecho.','Empujá hacia arriba.'], errores:['Rango de movimiento incompleto.'], consejos:['Enfatiza la porción inferior del pectoral.'], variantes:['Press banca plano','Fondos en paralelas']},
+  {id:'pec06', nombre:'Press en máquina (Chest Press)', grupo:'pecho', secundarios:['tríceps'], equipo:'Máquina', patron:'Empuje horizontal', dificultad:'Principiante', pasos:['Ajustá el asiento a la altura del pecho.','Empujá las manijas hacia adelante sin trabar codos.','Volvé controlado.'], errores:['Asiento mal ajustado castiga el hombro.'], consejos:['Ideal para aprender el patrón sin estabilizar peso libre.'], variantes:['Press convergente','Press banca']},
+  {id:'pec07', nombre:'Press convergente (Hammer Strength)', grupo:'pecho', secundarios:['tríceps'], equipo:'Máquina', patron:'Empuje horizontal', dificultad:'Principiante', pasos:['Sentate y agarrá las manijas convergentes.','Empujá al frente juntando el recorrido.','Volvé controlado sin soltar tensión.'], errores:['Usar demasiado peso y perder rango.'], consejos:['Buena para volumen al final del entreno.'], variantes:['Press en máquina','Press banca']},
+  {id:'pec08', nombre:'Aperturas con mancuernas', grupo:'pecho', secundarios:[], equipo:'Mancuernas', patron:'Aducción horizontal', dificultad:'Intermedio', pasos:['Acostate con mancuernas arriba del pecho, codos con leve flexión fija.','Abrí los brazos en arco hasta sentir estiramiento.','Cerrá volviendo a la posición inicial.'], errores:['Flexionar y extender el codo.','Usar demasiado peso.'], consejos:['Es un ejercicio de aislamiento, priorizá técnica sobre carga.'], variantes:['Aperturas en máquina','Cruce de poleas']},
+  {id:'pec09', nombre:'Aperturas en máquina (Pec Deck)', grupo:'pecho', secundarios:[], equipo:'Máquina', patron:'Aducción horizontal', dificultad:'Principiante', pasos:['Ajustá el asiento para que las manijas queden a la altura del pecho.','Juntá los brazos al frente contrayendo el pecho.','Volvé controlado.'], errores:['Rebotar en la posición final.'], consejos:['Buena para el final del entreno.'], variantes:['Aperturas mancuernas','Cruce de poleas']},
+  {id:'pec10', nombre:'Cruce de poleas (Cable Crossover)', grupo:'pecho', secundarios:[], equipo:'Poleas', patron:'Aducción horizontal', dificultad:'Intermedio', pasos:['Poleas altas, un paso adelante en posición de tijera.','Llevá las manos al frente y abajo cruzando levemente.','Volvé controlado sin perder tensión en el cable.'], errores:['Usar solo los brazos sin involucrar el pecho.'], consejos:['Cambiá la altura de la polea para enfatizar distintas fibras.'], variantes:['Aperturas mancuernas','Aperturas en máquina']},
+  {id:'pec11', nombre:'Fondos en paralelas (pecho)', grupo:'pecho', secundarios:['tríceps'], equipo:'Peso corporal', patron:'Empuje horizontal', dificultad:'Avanzado', pasos:['Sostenete en las paralelas con el torso inclinado adelante.','Bajá flexionando los codos hasta sentir estiramiento en el pecho.','Empujá hacia arriba.'], errores:['Bajar demasiado y sobrecargar el hombro.'], consejos:['Inclinar el torso adelante enfatiza más pecho que tríceps.'], variantes:['Press declinado','Flexiones']},
+  {id:'pec12', nombre:'Flexiones de brazos', grupo:'pecho', secundarios:['tríceps','core'], equipo:'Peso corporal', patron:'Empuje horizontal', dificultad:'Principiante', pasos:['Manos un poco más anchas que los hombros, cuerpo en línea recta.','Bajá el pecho cerca del piso.','Empujá hasta extender los brazos.'], errores:['Cadera caída o elevada.'], consejos:['Elevá los pies para aumentar dificultad.'], variantes:['Press banca','Fondos']},
+  {id:'esp01', nombre:'Dominadas', grupo:'espalda', secundarios:['bíceps'], equipo:'Peso corporal', patron:'Tracción vertical', dificultad:'Avanzado', pasos:['Colgate de la barra con agarre prono, un poco más ancho que los hombros.','Tirá hacia arriba hasta que el mentón pase la barra.','Bajá controlado hasta extensión completa.'], errores:['Usar impulso de las piernas.','Rango incompleto.'], consejos:['Si no llegás a hacer una, usá banda elástica de asistencia.'], variantes:['Jalón al pecho','Dominadas supinas']},
+  {id:'esp02', nombre:'Dominadas supinas (Chin-up)', grupo:'espalda', secundarios:['bíceps'], equipo:'Peso corporal', patron:'Tracción vertical', dificultad:'Avanzado', pasos:['Agarre supino, manos al ancho de los hombros.','Tirá hacia arriba llevando el pecho a la barra.','Bajá controlado.'], errores:['No extender completo abajo.'], consejos:['Involucra más bíceps que la dominada prona.'], variantes:['Dominadas','Jalón agarre cerrado']},
+  {id:'esp03', nombre:'Jalón al pecho (Lat pulldown)', grupo:'espalda', secundarios:['bíceps'], equipo:'Poleas', patron:'Tracción vertical', dificultad:'Principiante', pasos:['Sentate y ajustá las rodilleras.','Tirá la barra hacia el pecho llevando los codos abajo y atrás.','Volvé controlado sin soltar tensión.'], errores:['Usar impulso hacia atrás con el torso.'], consejos:['Pensá en llevar los codos a los bolsillos.'], variantes:['Dominadas','Jalón tras nuca']},
+  {id:'esp04', nombre:'Jalón tras nuca', grupo:'espalda', secundarios:['bíceps'], equipo:'Poleas', patron:'Tracción vertical', dificultad:'Intermedio', pasos:['Agarre ancho, barra detrás de la cabeza.','Tirá controlado hasta la nuca.','Volvé sin perder tensión.'], errores:['Forzar el cuello adelante.'], consejos:['Requiere buena movilidad de hombro.'], variantes:['Jalón al pecho']},
+  {id:'esp05', nombre:'Jalón agarre cerrado', grupo:'espalda', secundarios:['bíceps'], equipo:'Poleas', patron:'Tracción vertical', dificultad:'Principiante', pasos:['Agarre en V o cerrado, tirá hacia el pecho.','Contraé la espalda arriba.','Volvé controlado.'], errores:['Balancearse hacia atrás.'], consejos:['Buena variante para enfatizar dorsal bajo.'], variantes:['Jalón al pecho','Remo en polea']},
+  {id:'esp06', nombre:'Remo con barra', grupo:'espalda', secundarios:['bíceps','trapecios'], equipo:'Barra', patron:'Tracción horizontal', dificultad:'Intermedio', pasos:['Flexioná caderas manteniendo la espalda recta, barra colgando.','Tirá la barra hacia el abdomen.','Bajá controlado sin perder la posición de espalda.'], errores:['Redondear la espalda baja.','Usar impulso con rebote.'], consejos:['Mantené el pecho apuntando al piso.'], variantes:['Remo Pendlay','Remo T','Remo mancuerna']},
+  {id:'esp07', nombre:'Remo con mancuerna a un brazo', grupo:'espalda', secundarios:['bíceps'], equipo:'Mancuernas', patron:'Tracción horizontal', dificultad:'Principiante', pasos:['Apoyá una rodilla y mano en el banco, espalda paralela al piso.','Tirá la mancuerna hacia la cadera.','Bajá controlado.'], errores:['Rotar el torso para ayudarse.'], consejos:['Buena para corregir asimetrías entre lados.'], variantes:['Remo con barra','Remo en polea']},
+  {id:'esp08', nombre:'Remo en máquina sentado (Seated Row)', grupo:'espalda', secundarios:['bíceps'], equipo:'Máquina', patron:'Tracción horizontal', dificultad:'Principiante', pasos:['Sentate con el pecho apoyado o espalda recta según la máquina.','Tirá las manijas hacia el abdomen.','Volvé controlado estirando bien adelante.'], errores:['Encorvar la espalda al final del recorrido.'], consejos:['Pausa de un segundo en la contracción.'], variantes:['Remo en polea baja','Remo con barra']},
+  {id:'esp09', nombre:'Remo en polea baja', grupo:'espalda', secundarios:['bíceps'], equipo:'Poleas', patron:'Tracción horizontal', dificultad:'Principiante', pasos:['Sentate con las rodillas semi flexionadas, agarrá la manija.','Tirá hacia el abdomen manteniendo el torso estable.','Volvé controlado.'], errores:['Balancear el torso adelante y atrás.'], consejos:['Fijá la posición de la espalda antes de tirar.'], variantes:['Remo en máquina','Remo con barra']},
+  {id:'esp10', nombre:'Remo T (T-bar row)', grupo:'espalda', secundarios:['bíceps','trapecios'], equipo:'Barra', patron:'Tracción horizontal', dificultad:'Intermedio', pasos:['Colocate sobre la barra con el torso inclinado.','Tirá el peso hacia el pecho/abdomen.','Bajá controlado.'], errores:['Perder la posición neutra de columna.'], consejos:['Permite cargar bastante peso con buen soporte del torso.'], variantes:['Remo con barra','Remo mancuerna']},
+  {id:'esp11', nombre:'Peso muerto convencional', grupo:'espalda', secundarios:['isquios','trapecios','antebrazos'], equipo:'Barra', patron:'Bisagra de cadera', dificultad:'Avanzado', pasos:['Parate con la barra pegada a las espinillas, agarre firme.','Empujá el piso con las piernas mientras la espalda se mantiene recta.','Extendé cadera y rodillas hasta estar de pie.'], errores:['Redondear la espalda baja.','Alejar la barra del cuerpo.'], consejos:['Pensá en empujar el piso más que en levantar la barra.'], variantes:['Peso muerto rumano','Remo con barra']},
+  {id:'esp12', nombre:'Peso muerto rumano', grupo:'espalda', secundarios:['isquios','glúteos'], equipo:'Barra', patron:'Bisagra de cadera', dificultad:'Intermedio', pasos:['Parado con la barra al frente de los muslos.','Llevá la cadera hacia atrás bajando la barra pegada a las piernas.','Volvé extendiendo la cadera, sin redondear la espalda.'], errores:['Flexionar demasiado la rodilla.'], consejos:['Enfatiza isquios y espalda baja.'], variantes:['Peso muerto convencional']},
+  {id:'bic01', nombre:'Curl con barra recta', grupo:'biceps', secundarios:['antebrazos'], equipo:'Barra', patron:'Flexión de codo', dificultad:'Principiante', pasos:['Parado, agarre supino al ancho de hombros.','Flexioná los codos llevando la barra arriba sin mover los hombros.','Bajá controlado hasta extensión completa.'], errores:['Balancear el cuerpo para impulsar.'], consejos:['Codos pegados al torso durante todo el movimiento.'], variantes:['Curl barra Z','Curl mancuernas']},
+  {id:'bic02', nombre:'Curl con barra Z', grupo:'biceps', secundarios:['antebrazos'], equipo:'Barra', patron:'Flexión de codo', dificultad:'Principiante', pasos:['Agarrá la barra Z en los ángulos, codos pegados al cuerpo.','Flexioná llevando la barra arriba.','Bajá controlado.'], errores:['Abrir los codos hacia afuera.'], consejos:['Más cómodo para la muñeca que la barra recta.'], variantes:['Curl barra recta','Curl Scott']},
+  {id:'bic03', nombre:'Curl con mancuernas alternado', grupo:'biceps', secundarios:['antebrazos'], equipo:'Mancuernas', patron:'Flexión de codo', dificultad:'Principiante', pasos:['Parado con una mancuerna en cada mano.','Flexioná un brazo rotando la muñeca hacia afuera al subir.','Alterná con el otro brazo.'], errores:['Usar impulso de hombro.'], consejos:['La rotación de muñeca mejora la contracción.'], variantes:['Curl martillo','Curl concentrado']},
+  {id:'bic04', nombre:'Curl martillo', grupo:'biceps', secundarios:['antebrazos'], equipo:'Mancuernas', patron:'Flexión de codo', dificultad:'Principiante', pasos:['Sostené las mancuernas con agarre neutro.','Flexioná los codos sin rotar la muñeca.','Bajá controlado.'], errores:['Balancear el torso.'], consejos:['Trabaja también el braquial.'], variantes:['Curl alternado','Curl inverso']},
+  {id:'bic05', nombre:'Curl concentrado', grupo:'biceps', secundarios:[], equipo:'Mancuernas', patron:'Flexión de codo', dificultad:'Intermedio', pasos:['Sentado, apoyá el codo en la cara interna del muslo.','Flexioná llevando la mancuerna al hombro.','Bajá controlado con extensión completa.'], errores:['Mover el hombro o el codo del punto de apoyo.'], consejos:['Excelente para pico del bíceps al final del entreno.'], variantes:['Curl banco Scott']},
+  {id:'bic06', nombre:'Curl en banco Scott (predicador)', grupo:'biceps', secundarios:[], equipo:'Barra', patron:'Flexión de codo', dificultad:'Intermedio', pasos:['Apoyá los brazos sobre el banco Scott.','Flexioná llevando la barra arriba.','Bajá controlado sin despegar los brazos del banco.'], errores:['Despegar los codos del apoyo.'], consejos:['Elimina el impulso, muy estricto para el bíceps.'], variantes:['Curl concentrado','Curl barra Z']},
+  {id:'bic07', nombre:'Curl en polea baja', grupo:'biceps', secundarios:['antebrazos'], equipo:'Poleas', patron:'Flexión de codo', dificultad:'Principiante', pasos:['Parado frente a la polea baja con barra o cuerda.','Flexioná los codos manteniéndolos fijos.','Bajá controlado sin perder tensión.'], errores:['Alejarse demasiado de la polea.'], consejos:['La polea mantiene tensión constante en todo el recorrido.'], variantes:['Curl barra','Curl mancuernas']},
+  {id:'bic08', nombre:'Curl araña (Spider curl)', grupo:'biceps', secundarios:[], equipo:'Barra', patron:'Flexión de codo', dificultad:'Intermedio', pasos:['Apoyá el pecho en un banco inclinado, brazos colgando al frente.','Flexioná llevando la barra hacia el mentón.','Bajá controlado con extensión completa.'], errores:['Levantar el pecho del banco.'], consejos:['Aísla muy bien la cabeza corta del bíceps.'], variantes:['Curl Scott','Curl concentrado']},
+  {id:'tri01', nombre:'Press francés con barra', grupo:'triceps', secundarios:[], equipo:'Barra', patron:'Extensión de codo', dificultad:'Intermedio', pasos:['Acostado, barra por encima del pecho con agarre cerrado.','Flexioná los codos bajando la barra hacia la frente.','Extendé los brazos volviendo a la posición inicial.'], errores:['Mover los codos hacia afuera.'], consejos:['Mantené los codos fijos apuntando al techo.'], variantes:['Press francés mancuerna','Extensión en polea']},
+  {id:'tri02', nombre:'Press francés con mancuerna', grupo:'triceps', secundarios:[], equipo:'Mancuernas', patron:'Extensión de codo', dificultad:'Intermedio', pasos:['Acostado o sentado, mancuerna sostenida con ambas manos sobre la cabeza.','Flexioná los codos bajando la mancuerna detrás de la cabeza.','Extendé los brazos.'], errores:['Abrir demasiado los codos.'], consejos:['Buen estiramiento de la cabeza larga del tríceps.'], variantes:['Press francés barra']},
+  {id:'tri03', nombre:'Extensión de tríceps en polea (cuerda)', grupo:'triceps', secundarios:[], equipo:'Poleas', patron:'Extensión de codo', dificultad:'Principiante', pasos:['Parado frente a la polea alta, agarrá la cuerda.','Empujá hacia abajo extendiendo los codos y abriendo la cuerda al final.','Volvé controlado.'], errores:['Usar el peso del cuerpo para empujar.'], consejos:['Codos pegados al torso durante todo el recorrido.'], variantes:['Extensión barra recta','Press francés']},
+  {id:'tri04', nombre:'Extensión de tríceps en polea (barra recta)', grupo:'triceps', secundarios:[], equipo:'Poleas', patron:'Extensión de codo', dificultad:'Principiante', pasos:['Agarrá la barra con agarre prono, codos pegados al cuerpo.','Empujá hacia abajo extendiendo los codos.','Volvé controlado.'], errores:['Separar los codos del torso.'], consejos:['Ejercicio clásico de aislamiento.'], variantes:['Extensión con cuerda']},
+  {id:'tri05', nombre:'Fondos en banco (Bench dips)', grupo:'triceps', secundarios:[], equipo:'Peso corporal', patron:'Extensión de codo', dificultad:'Principiante', pasos:['Manos apoyadas en el borde de un banco, piernas extendidas al frente.','Bajá flexionando los codos hacia atrás.','Empujá hasta extender los brazos.'], errores:['Bajar demasiado y forzar el hombro.'], consejos:['Sumá peso en el regazo cuando se vuelva fácil.'], variantes:['Fondos en paralelas']},
+  {id:'tri06', nombre:'Fondos en paralelas (tríceps)', grupo:'triceps', secundarios:['pecho'], equipo:'Peso corporal', patron:'Extensión de codo', dificultad:'Avanzado', pasos:['Sostenete en las paralelas con el torso vertical.','Bajá flexionando los codos hacia atrás, no hacia los costados.','Empujá hasta extender los brazos.'], errores:['Inclinar el torso adelante.'], consejos:['Torso vertical = más énfasis en tríceps.'], variantes:['Fondos en banco']},
+  {id:'tri07', nombre:'Patada de tríceps (Kickback)', grupo:'triceps', secundarios:[], equipo:'Mancuernas', patron:'Extensión de codo', dificultad:'Principiante', pasos:['Apoyá una mano y rodilla en el banco, espalda paralela al piso.','Con el brazo pegado al torso, extendé el codo hacia atrás.','Volvé controlado.'], errores:['Mover el hombro en lugar del codo.'], consejos:['Peso liviano, foco total en la contracción.'], variantes:['Extensión en polea']},
+  {id:'tri08', nombre:'Press cerrado con barra', grupo:'triceps', secundarios:['pecho'], equipo:'Barra', patron:'Empuje horizontal', dificultad:'Intermedio', pasos:['Acostado, agarre al ancho de los hombros o un poco menos.','Bajá la barra al pecho con los codos pegados al cuerpo.','Empujá hasta extender los brazos.'], errores:['Agarre demasiado cerrado.'], consejos:['Excelente para sumar fuerza en press banca también.'], variantes:['Press francés','Fondos']},
+  {id:'ant01', nombre:'Curl de muñeca con barra', grupo:'antebrazos', secundarios:[], equipo:'Barra', patron:'Flexión de muñeca', dificultad:'Principiante', pasos:['Sentado, antebrazos apoyados en los muslos, palmas hacia arriba.','Flexioná las muñecas levantando la barra.','Bajá controlado con máximo estiramiento.'], errores:['Mover el antebrazo en vez de solo la muñeca.'], consejos:['Rango corto pero controlado, sin rebotar.'], variantes:['Curl inverso']},
+  {id:'ant02', nombre:'Curl de muñeca inverso', grupo:'antebrazos', secundarios:[], equipo:'Barra', patron:'Extensión de muñeca', dificultad:'Principiante', pasos:['Antebrazos apoyados, palmas hacia abajo.','Extendé la muñeca levantando la barra.','Bajá controlado.'], errores:['Usar demasiado peso.'], consejos:['Ayuda a prevenir molestias de codo.'], variantes:['Curl de muñeca']},
+  {id:'ant03', nombre:"Farmer's walk", grupo:'antebrazos', secundarios:['trapecios','core'], equipo:'Mancuernas', patron:'Carga/marcha', dificultad:'Principiante', pasos:['Agarrá una mancuerna pesada en cada mano.','Caminá manteniendo el torso erguido y los hombros atrás.','Recorré la distancia u objetivo de tiempo marcado.'], errores:['Encorvar los hombros hacia adelante.'], consejos:['Excelente para agarre, trapecios y core.'], variantes:['Curl de muñeca']},
+  {id:'ant04', nombre:'Curl inverso con barra', grupo:'antebrazos', secundarios:['bíceps'], equipo:'Barra', patron:'Flexión de codo', dificultad:'Principiante', pasos:['Agarre prono al ancho de hombros.','Flexioná los codos llevando la barra arriba.','Bajá controlado.'], errores:['Usar demasiado peso.'], consejos:['Trabaja antebrazo y braquial.'], variantes:['Curl martillo']},
+  {id:'trp01', nombre:'Encogimientos con barra', grupo:'trapecios', secundarios:[], equipo:'Barra', patron:'Elevación de escápula', dificultad:'Principiante', pasos:['Parado, barra al frente de los muslos.','Elevá los hombros hacia las orejas.','Bajá controlado con pausa arriba.'], errores:['Rotar los hombros en círculo.'], consejos:['Movimiento vertical puro, pausa de 1 segundo arriba.'], variantes:['Encogimientos mancuernas']},
+  {id:'trp02', nombre:'Encogimientos con mancuernas', grupo:'trapecios', secundarios:[], equipo:'Mancuernas', patron:'Elevación de escápula', dificultad:'Principiante', pasos:['Parado con una mancuerna en cada mano a los costados.','Elevá los hombros hacia las orejas.','Bajá controlado.'], errores:['Usar impulso de piernas.'], consejos:['Permite mayor rango que la barra.'], variantes:['Encogimientos barra','Encogimientos máquina']},
+  {id:'trp03', nombre:'Encogimientos en máquina', grupo:'trapecios', secundarios:[], equipo:'Máquina', patron:'Elevación de escápula', dificultad:'Principiante', pasos:['Ajustá la máquina y agarrá las manijas.','Elevá los hombros hacia arriba.','Bajá controlado.'], errores:['Rango muy corto por exceso de peso.'], consejos:['Más estable, permite concentrarse en la contracción.'], variantes:['Encogimientos barra']},
+  {id:'trp04', nombre:'Face pull', grupo:'trapecios', secundarios:['espalda alta'], equipo:'Poleas', patron:'Tracción horizontal', dificultad:'Principiante', pasos:['Polea a la altura de la cara con cuerda.','Tirá hacia la cara separando las manos, codos altos.','Volvé controlado.'], errores:['Tirar muy bajo, hacia el pecho.'], consejos:['Excelente para salud de hombro y postura.'], variantes:['Remo en polea']},
+];
+
+const GRUPOS = [ {id:'todos', label:'Todos'}, {id:'pecho', label:'Pecho'}, {id:'espalda', label:'Espalda'}, {id:'biceps', label:'Bíceps'}, {id:'triceps', label:'Tríceps'}, {id:'antebrazos', label:'Antebrazos'}, {id:'trapecios', label:'Trapecios'} ];
+
+const PLANTILLAS = [
+  {id:'ppl2', nombre:'Empuje / Tirón · 2 días', nivel:'Intermedio', objetivo:'Hipertrofia', dias:[
+    {nombre:'Empuje (Pecho + Tríceps)', ejercicios:[{exId:'pec01',target:'4x6'},{exId:'pec03',target:'3x10'},{exId:'pec08',target:'3x12'},{exId:'tri01',target:'3x10'},{exId:'tri03',target:'3x12'}]},
+    {nombre:'Tirón (Espalda + Bíceps)', ejercicios:[{exId:'esp06',target:'4x6'},{exId:'esp03',target:'3x10'},{exId:'esp07',target:'3x10'},{exId:'bic01',target:'3x10'},{exId:'bic04',target:'3x12'}]}
+  ]},
+  {id:'ppl4', nombre:'Empuje / Tirón · 4 días', nivel:'Intermedio', objetivo:'Hipertrofia + Fuerza', dias:[
+    {nombre:'Empuje A (Fuerza)', ejercicios:[{exId:'pec01',target:'4x5'},{exId:'pec03',target:'3x6'},{exId:'tri08',target:'3x6'},{exId:'tri01',target:'3x10'}]},
+    {nombre:'Tirón A (Fuerza)', ejercicios:[{exId:'esp11',target:'4x5'},{exId:'esp06',target:'3x6'},{exId:'bic01',target:'3x8'},{exId:'trp01',target:'3x10'}]},
+    {nombre:'Empuje B (Volumen)', ejercicios:[{exId:'pec04',target:'4x10'},{exId:'pec09',target:'3x12'},{exId:'tri03',target:'3x12'},{exId:'tri05',target:'3x12'}]},
+    {nombre:'Tirón B (Volumen)', ejercicios:[{exId:'esp03',target:'4x10'},{exId:'esp09',target:'3x12'},{exId:'bic03',target:'3x12'},{exId:'ant03',target:'3x40s'}]}
+  ]},
+  {id:'bro3', nombre:'Bro Split Torso · 3 días', nivel:'Intermedio', objetivo:'Hipertrofia', dias:[
+    {nombre:'Pecho', ejercicios:[{exId:'pec01',target:'4x8'},{exId:'pec04',target:'3x10'},{exId:'pec08',target:'3x12'},{exId:'pec10',target:'3x12'}]},
+    {nombre:'Espalda + Trapecios', ejercicios:[{exId:'esp01',target:'4x8'},{exId:'esp06',target:'3x8'},{exId:'esp09',target:'3x12'},{exId:'trp01',target:'3x12'}]},
+    {nombre:'Brazos + Antebrazo', ejercicios:[{exId:'bic01',target:'3x10'},{exId:'bic04',target:'3x12'},{exId:'tri01',target:'3x10'},{exId:'tri03',target:'3x12'},{exId:'ant01',target:'3x15'}]}
+  ]}
+];
+
+const TRADUCCION_GIF = {
+  'Press banca con barra':'barbell bench press','Press banca con mancuernas':'dumbbell bench press','Press inclinado con barra':'barbell incline bench press','Press inclinado con mancuernas':'dumbbell incline bench press','Press declinado con barra':'barbell decline bench press','Press en máquina (Chest Press)':'machine chest press','Press convergente (Hammer Strength)':'hammer strength chest press','Aperturas con mancuernas':'dumbbell fly','Aperturas en máquina (Pec Deck)':'pec deck fly','Cruce de poleas (Cable Crossover)':'cable crossover','Fondos en paralelas (pecho)':'chest dip','Flexiones de brazos':'push up','Dominadas':'pull up','Dominadas supinas (Chin-up)':'chin up','Jalón al pecho (Lat pulldown)':'lat pulldown','Jalón tras nuca':'behind the neck pulldown','Jalón agarre cerrado':'close grip pulldown','Remo con barra':'barbell bent over row','Remo con mancuerna a un brazo':'dumbbell row','Remo en máquina sentado (Seated Row)':'seated cable row','Remo en polea baja':'seated cable row','Remo T (T-bar row)':'t bar row','Peso muerto convencional':'barbell deadlift','Peso muerto rumano':'romanian deadlift','Curl con barra recta':'barbell curl','Curl con barra Z':'ez bar curl','Curl con mancuernas alternado':'alternate dumbbell curl','Curl martillo':'hammer curl','Curl concentrado':'concentration curl','Curl en banco Scott (predicador)':'preacher curl','Curl en polea baja':'cable curl','Curl araña (Spider curl)':'spider curl','Press francés con barra':'barbell skullcrusher','Press francés con mancuerna':'dumbbell skullcrusher','Extensión de tríceps en polea (cuerda)':'cable tricep pushdown rope','Extensión de tríceps en polea (barra recta)':'cable tricep pushdown','Fondos en banco (Bench dips)':'bench dip','Fondos en paralelas (tríceps)':'tricep dip','Patada de tríceps (Kickback)':'tricep kickback','Press cerrado con barra':'close grip bench press','Curl de muñeca con barra':'wrist curl','Curl de muñeca inverso':'reverse wrist curl',"Farmer's walk":'farmers walk','Curl inverso con barra':'reverse barbell curl','Encogimientos con barra':'barbell shrug','Encogimientos con mancuernas':'dumbbell shrug','Encogimientos en máquina':'machine shrug','Face pull':'face pull'
+};
+
+// ---------- ESTADO ----------
+let perfil = null;
+let tema = 'dark';
+let currentTab = 'inicio';
+let entrenarSubtab = 'biblioteca';
+let filtroGrupo = 'todos';
+let busquedaEjercicio = '';
+let ejercicioAbierto = null;
+let favoritos = [];
+let construyendoRutina = null;
+let pickerParaDia = null;
+let mostrandoGenerador = false;
+let sessionState = null;
+let sesionAbiertaIdx = null;
+const today = new Date().toISOString().slice(0,10);
+
+// ---------- STORAGE ----------
+async function getKey(key){ try{ const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; } catch(e){ return null; } }
+async function setKey(key, value){ try{ await window.storage.set(key, JSON.stringify(value)); } catch(e){ console.error('storage set fail', key, e); } }
+async function loadPerfil(){ const p = await getKey('perfil'); perfil = p || DEFAULT_PERFIL; if(!p) await setKey('perfil', perfil); }
+async function loadFavoritos(){ favoritos = (await getKey('favoritos_ejercicios')) || []; }
+async function toggleFavorito(id){ if(favoritos.includes(id)) favoritos = favoritos.filter(f=>f!==id); else favoritos.push(id); await setKey('favoritos_ejercicios', favoritos); }
+async function loadDia(date){ return (await getKey('dia:'+date)) || {comidas:[], peso:null}; }
+async function saveDia(date, data){ await setKey('dia:'+date, data); }
+async function loadAllPesos(){
+  try{ const list = await window.storage.list('dia:'); if(!list || !list.keys) return [];
+    const out = []; for(const k of list.keys){ const d = await getKey(k); if(d && d.peso){ out.push({fecha:k.replace('dia:',''), peso:d.peso}); } }
+    return out.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  }catch(e){ return []; }
+}
+async function cargarSesiones(){
+  try{ const list = await window.storage.list('sesion:'); if(!list || !list.keys) return [];
+    const out = []; for(const k of list.keys){ const s = await getKey(k); if(s) out.push(s); }
+    return out.sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||''));
+  }catch(e){ return []; }
+}
+
+// ---------- GIF (ExerciseDB OSS, gratis, sin key) ----------
+const gifCache = {};
+async function getExerciseGif(nombreEs){
+  if(gifCache[nombreEs] !== undefined) return gifCache[nombreEs];
+  const nombreEn = TRADUCCION_GIF[nombreEs] || nombreEs;
+  try{
+    const res = await fetch(`https://oss.exercisedb.dev/api/v1/exercises/search?q=${encodeURIComponent(nombreEn)}&limit=1`);
+    const data = await res.json();
+    const item = (data.data && data.data[0]) || (data.exercises && data.exercises[0]) || (Array.isArray(data) && data[0]) || null;
+    const url = item ? (item.gifUrl || item.gif_url || null) : null;
+    gifCache[nombreEs] = url; return url;
+  }catch(e){ gifCache[nombreEs] = null; return null; }
+}
+function fmtDate(d){ const dt = new Date(d+'T00:00:00'); return dt.toLocaleDateString('es-AR',{day:'2-digit',month:'short'}); }
+function listaFiltrada(){
+  return EJERCICIOS.filter(e=>{
+    const okGrupo = filtroGrupo==='todos' || e.grupo===filtroGrupo;
+    const okBusqueda = !busquedaEjercicio || e.nombre.toLowerCase().includes(busquedaEjercicio.toLowerCase());
+    return okGrupo && okBusqueda;
+  });
+}
+
+// ---------- RENDER ROOT ----------
+async function render(){
+  const app = document.getElementById('app');
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.toggle('active', b.dataset.tab===currentTab));
+  const dias = Math.max(1, Math.round((new Date(today) - new Date(perfil.fecha_inicio)) / 86400000) + 1);
+  document.getElementById('streakEl').textContent = `día ${dias} · 60`;
+
+  if(currentTab==='inicio') app.innerHTML = await renderInicio();
+  if(currentTab==='entrenar') app.innerHTML = await renderEntrenar();
+  if(currentTab==='nutricion') app.innerHTML = await renderNutricion();
+  if(currentTab==='progreso') app.innerHTML = await renderProgreso();
+  if(currentTab==='perfil') app.innerHTML = await renderPerfil();
+
+  attachHandlers();
+}
+
+// ---------- INICIO ----------
+async function calcularRacha(){
+  const sesiones = await cargarSesiones();
+  const fechas = new Set(sesiones.map(s=>s.fecha));
+  let racha=0; let cursor=new Date(today);
+  while(true){ const key = cursor.toISOString().slice(0,10); if(fechas.has(key)){ racha++; cursor.setDate(cursor.getDate()-1); } else break; }
+  const semana=[]; const nombresDias=['D','L','M','X','J','V','S'];
+  for(let i=6;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const key=d.toISOString().slice(0,10); semana.push({dia:nombresDias[d.getDay()], hecho: fechas.has(key)}); }
+  return {racha, semana};
+}
+async function renderInicio(){
+  const dia = await loadDia(today);
+  const tot = dia.comidas.reduce((a,c)=>({kcal:a.kcal+c.kcal, prot:a.prot+c.prot}), {kcal:0,prot:0});
+  const {racha, semana} = await calcularRacha();
+  const rutinas = (await getKey('rutinas')) || [];
+  return `
+    <div class="card accent">
+      <h3>Hoy</h3>
+      <div class="bignum">${Math.round(tot.kcal)} <small>/ ${perfil.kcal} kcal</small></div>
+      <div class="bar-track" style="margin:8px 0 12px;"><div class="bar-fill" style="width:${Math.min(100,tot.kcal/perfil.kcal*100)}%; background:var(--primary);"></div></div>
+      <div class="bar-label"><span>Proteína</span><b>${Math.round(tot.prot)}g / ${perfil.prot}g</b></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,tot.prot/perfil.prot*100)}%; background:var(--info);"></div></div>
+    </div>
+    <div class="card">
+      <h3>Racha</h3>
+      <div class="bignum">🔥 ${racha} <small>día${racha===1?'':'s'} seguidos</small></div>
+      <div class="row" style="margin-top:10px;">${semana.map(d=>`<div style="text-align:center; flex:1;"><div class="ex-meta">${d.dia}</div><div style="font-size:16px;">${d.hecho?'✅':'▫️'}</div></div>`).join('')}</div>
+    </div>
+    <div class="card">
+      <h3>Tus rutinas</h3>
+      ${rutinas.length===0 ? '<div class="empty">Todavía no armaste una rutina</div>' : rutinas.slice(0,3).map(r=>`<div class="exrow-mini"><span>${r.nombre}</span><span class="ex-meta">${r.dias.length} días</span></div>`).join('')}
+      <button class="btn-primary" style="margin-top:8px;" id="irRutinas">Ir a Entrenar</button>
+    </div>
+  `;
+}
+
+// ---------- ENTRENAR ----------
+async function renderEntrenar(){
+  if(sessionState) return renderEntrenoActivo();
+  if(ejercicioAbierto) return renderDetalleEjercicio(ejercicioAbierto);
+  let body = '';
+  if(entrenarSubtab==='biblioteca') body = renderBiblioteca();
+  else if(entrenarSubtab==='rutina') body = await renderRutinas();
+  else if(entrenarSubtab==='historial') body = await renderHistorial();
+  return `
+    <div class="subtabs">
+      <button data-entrenar-sub="biblioteca" class="${entrenarSubtab==='biblioteca'?'active':''}">Biblioteca</button>
+      <button data-entrenar-sub="rutina" class="${entrenarSubtab==='rutina'?'active':''}">Mi rutina</button>
+      <button data-entrenar-sub="historial" class="${entrenarSubtab==='historial'?'active':''}">Historial</button>
+    </div>
+    ${body}
+  `;
+}
+
+function renderBiblioteca(){
+  const filtrados = listaFiltrada();
+  const iconos = {pecho:'💪',espalda:'🔙',biceps:'💪',triceps:'🦾',antebrazos:'✊',trapecios:'🔺'};
+  return `
+    <input type="text" id="buscarEjercicio" placeholder="Buscar ejercicio... ej: press" value="${busquedaEjercicio}">
+    <div class="chips">${GRUPOS.map(g=>`<div class="chip ${filtroGrupo===g.id?'active':''}" data-grupo="${g.id}">${g.label}</div>`).join('')}</div>
+    ${filtrados.length===0 ? '<div class="empty">Sin resultados</div>' :
+      filtrados.map(e=>`
+        <div class="ex-card" data-abrir-ejercicio="${e.id}">
+          <div class="ex-avatar">${iconos[e.grupo]||'🏋️'}</div>
+          <div class="ex-info"><div class="ex-name">${e.nombre}</div><div class="ex-meta">${e.equipo} · ${e.dificultad}</div></div>
+          <button class="ex-fav ${favoritos.includes(e.id)?'active':''}" data-fav="${e.id}">★</button>
+        </div>
+      `).join('')
+    }
+  `;
+}
+
+function renderDetalleEjercicio(id){
+  const e = EJERCICIOS.find(x=>x.id===id);
+  if(!e) return '<div class="empty">No encontrado</div>';
+  return `
+    <button class="backbtn" id="volverBiblioteca">‹ Volver</button>
+    <div class="gif-box" id="gifBox"><div class="placeholder">Cargando GIF...</div></div>
+    <h2 style="font-size:20px; margin-bottom:8px;">${e.nombre}</h2>
+    <div style="margin-bottom:14px;"><span class="tag primary">${e.grupo}</span><span class="tag">${e.equipo}</span><span class="tag">${e.patron}</span><span class="tag">${e.dificultad}</span></div>
+    <div class="card"><h3>Cómo hacerlo</h3>${e.pasos.map(p=>`<div class="step">${p}</div>`).join('')}</div>
+    <div class="card"><h3>Errores frecuentes</h3>${e.errores.map(p=>`<div class="step">${p}</div>`).join('')}</div>
+    <div class="card"><h3>Consejos</h3>${e.consejos.map(p=>`<div class="step">${p}</div>`).join('')}</div>
+    ${e.secundarios.length ? `<div class="card"><h3>Músculos secundarios</h3>${e.secundarios.map(s=>`<span class="tag">${s}</span>`).join('')}</div>` : ''}
+    ${e.variantes.length ? `<div class="card"><h3>Variantes similares</h3>${e.variantes.map(v=>`<span class="tag">${v}</span>`).join('')}</div>` : ''}
+    <button class="btn-ghost" style="width:100%;" data-fav="${e.id}">${favoritos.includes(e.id)?'★ En favoritos':'☆ Agregar a favoritos'}</button>
+  `;
+}
+
+// ---------- RUTINAS ----------
+async function renderRutinas(){
+  if(pickerParaDia !== null) return renderPickerEjercicio();
+  if(construyendoRutina) return renderBuilderRutina();
+  const rutinas = (await getKey('rutinas')) || [];
+  return `
+    <div class="row" style="margin-bottom:12px;">
+      <button class="btn-primary" id="nuevaRutina">＋ Personalizada</button>
+      <button class="btn-ghost" id="toggleGenerador">⚡ Generar automática</button>
+    </div>
+    ${mostrandoGenerador ? renderFormGenerador() : ''}
+    <div class="card"><h3>Plantillas predefinidas</h3>
+      ${PLANTILLAS.map(p=>`
+        <div class="ex-card" style="cursor:default;">
+          <div class="ex-info"><div class="ex-name">${p.nombre}</div><div class="ex-meta">${p.dias.length} días · ${p.objetivo} · ${p.nivel}</div></div>
+          <button class="btn-ghost btn-sm" data-usar-plantilla="${p.id}">Usar</button>
+        </div>
+      `).join('')}
+    </div>
+    <div class="card"><h3>Mis rutinas</h3>
+      ${rutinas.length===0 ? '<div class="empty">Todavía no armaste ninguna rutina</div>' :
+        rutinas.map(r=>`
+          <div class="day-block">
+            <div class="day-header"><b>${r.nombre}</b><button class="btn-danger btn-sm" data-eliminar-rutina="${r.id}">Eliminar</button></div>
+            ${r.dias.map((d,di)=>`<div class="exrow-mini"><span>${d.nombre} · ${d.ejercicios.length} ej.</span><button class="btn-primary btn-sm" data-empezar="${r.id}:${di}">▶ Empezar</button></div>`).join('')}
+          </div>
+        `).join('')
+      }
+    </div>
+  `;
+}
+function renderFormGenerador(){
+  return `<div class="card accent"><h3>Generador automático</h3>
+    <label>Días por semana</label>
+    <select id="genDias"><option value="2">2</option><option value="3">3</option><option value="4" selected>4</option></select>
+    <label>Objetivo</label>
+    <select id="genObjetivo"><option value="masa">Ganar masa muscular</option><option value="fuerza">Fuerza</option><option value="recomp" selected>Recomposición (tu caso)</option></select>
+    <label>Nivel</label>
+    <select id="genNivel"><option value="principiante">Principiante</option><option value="intermedio" selected>Intermedio</option><option value="avanzado">Avanzado</option></select>
+    <label>Duración disponible</label>
+    <select id="genDuracion"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>60 min</option><option value="75">75 min</option><option value="90">90 min</option></select>
+    <label>Priorizar (opcional)</label>
+    <select id="genPrioridad"><option value="ninguna">Sin prioridad</option><option value="pecho">Pecho</option><option value="espalda">Espalda</option><option value="biceps">Bíceps</option><option value="triceps">Tríceps</option></select>
+    <button class="btn-primary" id="confirmarGenerar">Generar rutina</button>
+  </div>`;
+}
+function generarRutina({dias, objetivo, nivel, duracion, prioridad}){
+  const repsPorObjetivo = {fuerza:'4x5', masa:'4x10', recomp:'3x12'};
+  const exPorDia = {30:3,45:4,60:5,75:6,90:7}[duracion] || 5;
+  const diasArr = [];
+  for(let i=0;i<dias;i++){
+    const esEmpuje = i%2===0;
+    const gruposDia = esEmpuje ? ['pecho','triceps'] : ['espalda','biceps'];
+    let pool = EJERCICIOS.filter(e=>gruposDia.includes(e.grupo));
+    if(prioridad && prioridad!=='ninguna'){ const extra = EJERCICIOS.filter(e=>e.grupo===prioridad); pool = extra.concat(pool); }
+    const elegidos = pool.slice(0, exPorDia);
+    diasArr.push({ nombre: (esEmpuje?'Empuje ':'Tirón ') + (Math.floor(i/2)+1), ejercicios: elegidos.map(e=>({exId:e.id, target: repsPorObjetivo[objetivo] || '3x10'})) });
+  }
+  return {id:'gen_'+Date.now(), nombre:`Rutina generada · ${dias} días · ${objetivo}`, dias:diasArr};
+}
+function renderBuilderRutina(){
+  return `
+    <button class="backbtn" id="cancelarBuilder">‹ Cancelar</button>
+    <div class="card"><label>Nombre de la rutina</label><input type="text" id="nombreRutinaInput" value="${construyendoRutina.nombre}" placeholder="ej: Mi rutina torso"></div>
+    ${construyendoRutina.dias.map((d,di)=>`
+      <div class="day-block">
+        <div class="day-header">
+          <input type="text" style="margin-bottom:0;" data-dia-nombre="${di}" value="${d.nombre}" placeholder="Nombre del día">
+          <button class="btn-danger btn-sm" data-eliminar-dia="${di}">✕</button>
+        </div>
+        ${d.ejercicios.map((ex,ei)=>{ const info = EJERCICIOS.find(e=>e.id===ex.exId); return `
+          <div class="exrow-mini">
+            <span>${info?info.nombre:ex.exId}</span>
+            <input type="text" data-target-dia="${di}" data-target-ex="${ei}" value="${ex.target}">
+            <button class="btn-ghost btn-sm" data-mover="${di}:${ei}:-1">↑</button>
+            <button class="btn-ghost btn-sm" data-mover="${di}:${ei}:1">↓</button>
+            <button class="btn-danger btn-sm" data-quitar-ex="${di}:${ei}">✕</button>
+          </div>`; }).join('')}
+        <button class="btn-ghost btn-sm" style="width:100%; margin-top:6px;" data-agregar-ex-dia="${di}">＋ Agregar ejercicio</button>
+      </div>
+    `).join('')}
+    <button class="btn-ghost" style="width:100%; margin-bottom:12px;" id="agregarDia">＋ Agregar día</button>
+    <button class="btn-primary" id="guardarRutina">Guardar rutina</button>
+  `;
+}
+function renderPickerEjercicio(){
+  const filtrados = listaFiltrada();
+  const iconos = {pecho:'💪',espalda:'🔙',biceps:'💪',triceps:'🦾',antebrazos:'✊',trapecios:'🔺'};
+  return `
+    <button class="backbtn" id="cerrarPicker">‹ Volver</button>
+    <input type="text" id="buscarEjercicio" placeholder="Buscar ejercicio..." value="${busquedaEjercicio}">
+    <div class="chips">${GRUPOS.map(g=>`<div class="chip ${filtroGrupo===g.id?'active':''}" data-grupo="${g.id}">${g.label}</div>`).join('')}</div>
+    ${filtrados.map(e=>`<div class="ex-card" data-pick-ejercicio="${e.id}"><div class="ex-avatar">${iconos[e.grupo]||'🏋️'}</div><div class="ex-info"><div class="ex-name">${e.nombre}</div><div class="ex-meta">${e.equipo}</div></div></div>`).join('')}
+  `;
+}
+
+// ---------- MODO ENTRENAMIENTO ----------
+async function calcularHistorialPrevio(exIds){
+  const sesiones = await cargarSesiones();
+  const map = {};
+  sesiones.forEach(s=> (s.ejercicios||[]).forEach(e=>{
+    if(!exIds.includes(e.exId)) return;
+    const maxSet = e.sets.reduce((m,st)=> (st.kg*st.reps > m.kg*m.reps ? st : m), {kg:0,reps:0});
+    if(!map[e.exId] || maxSet.kg > map[e.exId].kg) map[e.exId] = maxSet;
+  }));
+  return map;
+}
+async function iniciarEntrenamiento(rutina, diaIdx){
+  const dia = rutina.dias[diaIdx];
+  const exIds = dia.ejercicios.map(e=>e.exId);
+  const historialPrevio = await calcularHistorialPrevio(exIds);
+  sessionState = { rutinaNombre: rutina.nombre, diaNombre: dia.nombre, inicio: Date.now(), descansoSeg:90, descansoRestante:0, descansoInterval:null, idx:0, historialPrevio,
+    ejercicios: dia.ejercicios.map(ex=>{ const info=EJERCICIOS.find(e=>e.id===ex.exId); return {exId:ex.exId, nombre: info?info.nombre:ex.exId, target: ex.target, sets:[]}; }) };
+  currentTab='entrenar'; ejercicioAbierto=null;
+  await render();
+}
+function actualizarDescanso(){ if(!sessionState) return; const el=document.getElementById('descansoDisplay'); if(!el) return; el.textContent = sessionState.descansoRestante>0 ? sessionState.descansoRestante+'s' : '—'; }
+function iniciarDescanso(seg){
+  sessionState.descansoSeg = seg; sessionState.descansoRestante = seg;
+  if(sessionState.descansoInterval) clearInterval(sessionState.descansoInterval);
+  sessionState.descansoInterval = setInterval(()=>{
+    if(!sessionState){ return; }
+    sessionState.descansoRestante--; actualizarDescanso();
+    if(sessionState.descansoRestante<=0){ clearInterval(sessionState.descansoInterval); }
+  }, 1000);
+  actualizarDescanso();
+}
+function renderEntrenoActivo(){
+  const total = sessionState.ejercicios.length;
+  const ex = sessionState.ejercicios[sessionState.idx];
+  const previo = sessionState.historialPrevio[ex.exId];
+  return `
+    <div class="card accent">
+      <div class="bar-label"><span>${sessionState.diaNombre}</span><b>${sessionState.idx+1} / ${total}</b></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(sessionState.idx+1)/total*100}%; background:var(--primary);"></div></div>
+    </div>
+    <div class="card">
+      <h2 style="font-size:19px; margin-bottom:4px;">${ex.nombre}</h2>
+      <div class="ex-meta" style="margin-bottom:10px;">Objetivo: ${ex.target}${previo? ` · Última vez: ${previo.kg}kg × ${previo.reps}`:''}</div>
+      ${ex.sets.length ? ex.sets.map((s,si)=>`<div class="meal-item"><span>Serie ${si+1}</span><span>${s.kg}kg × ${s.reps}${(s.rir!==''&&s.rir!=null)?` · RIR ${s.rir}`:''}</span></div>`).join('') : '<div class="empty">Sin series todavía</div>'}
+      <div class="divider"></div>
+      <div class="row">
+        <input type="number" id="setKg" placeholder="kg" step="0.5">
+        <input type="number" id="setReps" placeholder="reps">
+        <input type="number" id="setRir" placeholder="RIR">
+      </div>
+      <button class="btn-primary" id="completarSerie">✓ Completar serie</button>
+    </div>
+    <div class="card">
+      <h3>Descanso</h3>
+      <div class="row" style="margin-bottom:10px;">${[30,60,90,120,180].map(s=>`<button class="btn-ghost btn-sm" data-descanso="${s}">${s}s</button>`).join('')}</div>
+      <div class="bignum" id="descansoDisplay" style="text-align:center;">${sessionState.descansoRestante>0?sessionState.descansoRestante+'s':'—'}</div>
+    </div>
+    <div class="row" style="margin-bottom:10px;">
+      <button class="btn-ghost" id="exAnterior" ${sessionState.idx===0?'disabled':''}>‹ Anterior</button>
+      <button class="btn-ghost" id="exSiguiente" ${sessionState.idx===total-1?'disabled':''}>Siguiente ›</button>
+    </div>
+    <button class="btn-danger" style="width:100%;" id="finalizarEntreno">Finalizar entrenamiento</button>
+  `;
+}
+async function finalizarEntrenamiento(){
+  if(sessionState.descansoInterval) clearInterval(sessionState.descansoInterval);
+  const duracionMin = Math.max(1, Math.round((Date.now()-sessionState.inicio)/60000));
+  const ejerciciosConSets = sessionState.ejercicios.filter(e=>e.sets.length>0);
+  let volumenTotal = 0; const prsNuevos=[];
+  ejerciciosConSets.forEach(e=>{
+    const maxSetHoy = e.sets.reduce((m,s)=> (s.kg*s.reps > m.kg*m.reps? s : m), {kg:0,reps:0});
+    volumenTotal += e.sets.reduce((s,set)=>s+set.kg*set.reps,0);
+    const previo = sessionState.historialPrevio[e.exId];
+    if(!previo || maxSetHoy.kg > previo.kg){ prsNuevos.push(`${e.nombre}: ${maxSetHoy.kg}kg × ${maxSetHoy.reps}`); }
+  });
+  const sesion = {fecha: today, rutinaNombre: sessionState.rutinaNombre, diaNombre: sessionState.diaNombre, duracionMin, volumenTotal, ejercicios: ejerciciosConSets};
+  await setKey('sesion:'+Date.now(), sesion);
+  sessionState = null; entrenarSubtab='historial';
+  await render();
+  if(prsNuevos.length) alert('🏆 Nuevo PR!\n'+prsNuevos.join('\n')); else alert('Entrenamiento guardado 💪');
+}
+
+// ---------- HISTORIAL ----------
+async function renderHistorial(){
+  const sesiones = await cargarSesiones();
+  const prMap = {};
+  sesiones.forEach(s=> (s.ejercicios||[]).forEach(e=>{
+    const maxSet = e.sets.reduce((m,st)=> (st.kg*st.reps > m.kg*m.reps ? st : m), {kg:0,reps:0});
+    if(!prMap[e.exId] || (maxSet.kg*maxSet.reps) > (prMap[e.exId].kg*prMap[e.exId].reps)) prMap[e.exId] = {...maxSet, nombre:e.nombre};
+  }));
+  const prs = Object.values(prMap).sort((a,b)=> (b.kg*b.reps)-(a.kg*a.reps)).slice(0,10);
+  const hoy = new Date();
+  const inicioSemana = new Date(hoy); inicioSemana.setDate(hoy.getDate()-6);
+  const inicioSemanaPrev = new Date(hoy); inicioSemanaPrev.setDate(hoy.getDate()-13);
+  const finSemanaPrev = new Date(hoy); finSemanaPrev.setDate(hoy.getDate()-7);
+  const volSemana = sesiones.filter(s=> new Date(s.fecha) >= inicioSemana).reduce((a,s)=>a+(s.volumenTotal||0),0);
+  const volSemanaPrev = sesiones.filter(s=>{ const f=new Date(s.fecha); return f>=inicioSemanaPrev && f<=finSemanaPrev; }).reduce((a,s)=>a+(s.volumenTotal||0),0);
+  return `
+    <div class="card accent"><h3>Volumen semanal (kg totales)</h3>
+      <div class="grid2"><div><div class="bar-label"><span>Esta semana</span></div><div class="bignum" style="font-size:20px;">${Math.round(volSemana).toLocaleString()}</div></div>
+      <div><div class="bar-label"><span>Semana anterior</span></div><div class="bignum" style="font-size:20px;">${Math.round(volSemanaPrev).toLocaleString()}</div></div></div>
+    </div>
+    <div class="card"><h3>🏆 Récords personales</h3>${prs.length===0?'<div class="empty">Todavía no hay PRs registrados</div>':prs.map(p=>`<div class="meal-item"><span>${p.nombre}</span><b>${p.kg}kg × ${p.reps}</b></div>`).join('')}</div>
+    <div class="card"><h3>Entrenamientos</h3>
+      ${sesiones.length===0?'<div class="empty">Todavía no completaste ningún entrenamiento</div>':
+        sesiones.map((s,i)=>`
+          <div class="day-block">
+            <div class="day-header" data-toggle-sesion="${i}" style="cursor:pointer;"><b>${fmtDate(s.fecha)} · ${s.diaNombre}</b><span class="ex-meta">${s.duracionMin} min</span></div>
+            ${sesionAbiertaIdx===i ? (s.ejercicios||[]).map(e=>`<div class="exrow-mini"><span>${e.nombre}</span><span class="ex-meta">${e.sets.map(st=>`${st.kg}×${st.reps}`).join(', ')}</span></div>`).join('') : ''}
+          </div>
+        `).join('')}
+    </div>
+  `;
+}
+
+// ---------- NUTRICIÓN ----------
+let ultimaBusquedaComida = [];
+async function renderNutricion(){
+  const dia = await loadDia(today);
+  const tot = dia.comidas.reduce((a,c)=>({kcal:a.kcal+c.kcal, prot:a.prot+c.prot, carb:a.carb+c.carb, grasa:a.grasa+c.grasa}), {kcal:0,prot:0,carb:0,grasa:0});
+  const pct = (v,obj)=>Math.min(100, Math.round(v/obj*100));
+  return `
+    <div class="card accent"><h3>Calorías de hoy</h3><div class="bignum">${Math.round(tot.kcal)} <small>/ ${perfil.kcal} kcal</small></div>
+      <div class="bar-track" style="margin-top:10px;"><div class="bar-fill" style="width:${pct(tot.kcal,perfil.kcal)}%; background:${tot.kcal>perfil.kcal?'var(--danger)':'var(--primary)'};"></div></div>
+    </div>
+    <div class="card"><h3>Macros</h3>
+      <div class="bar-row"><div class="bar-label"><span>Proteína</span><b>${Math.round(tot.prot)}g / ${perfil.prot}g</b></div><div class="bar-track"><div class="bar-fill" style="width:${pct(tot.prot,perfil.prot)}%; background:var(--primary);"></div></div></div>
+      <div class="bar-row"><div class="bar-label"><span>Carbos</span><b>${Math.round(tot.carb)}g / ${perfil.carb}g</b></div><div class="bar-track"><div class="bar-fill" style="width:${pct(tot.carb,perfil.carb)}%; background:var(--info);"></div></div></div>
+      <div class="bar-row"><div class="bar-label"><span>Grasa</span><b>${Math.round(tot.grasa)}g / ${perfil.grasa}g</b></div><div class="bar-track"><div class="bar-fill" style="width:${pct(tot.grasa,perfil.grasa)}%; background:#FF9B5B;"></div></div></div>
+    </div>
+    <div class="card"><h3>Buscar alimento</h3>
+      <div class="row"><input type="text" id="buscarInput" placeholder="ej: arroz, pollo..."><button class="btn-primary btn-icon" id="buscarBtn">Buscar</button></div>
+      <div class="row"><input type="text" id="barcodeInput" placeholder="Código de barras (EAN)"><button class="btn-ghost btn-icon" id="barcodeBtn">🔎</button></div>
+      <div class="ex-meta" style="margin-bottom:4px;">📷 Escaneo con cámara: pendiente, necesita permisos nativos no disponibles en este chat. El código manual sí funciona (Open Food Facts real).</div>
+      <div id="resultados"></div>
+    </div>
+    <div class="card"><h3>Cargar manual</h3>
+      <input type="text" id="manNombre" placeholder="Nombre del alimento">
+      <div class="grid2"><input type="number" id="manKcal" placeholder="kcal"><input type="number" id="manProt" placeholder="proteína (g)"><input type="number" id="manCarb" placeholder="carbos (g)"><input type="number" id="manGrasa" placeholder="grasa (g)"></div>
+      <button class="btn-primary" id="manAgregar">Agregar</button>
+    </div>
+    <div id="cantidadModal"></div>
+    <div class="card"><h3>Comidas de hoy</h3>
+      ${dia.comidas.length===0 ? '<div class="empty">Todavía no cargaste nada</div>' :
+        dia.comidas.map((c,i)=>`<div class="meal-item"><div><div>${c.nombre}</div><div class="macros">${Math.round(c.kcal)} kcal · P${Math.round(c.prot)} C${Math.round(c.carb)} G${Math.round(c.grasa)}</div></div><button class="btn-danger btn-sm" data-del-comida="${i}">Borrar</button></div>`).join('')}
+    </div>
+  `;
+}
+async function buscarAlimento(q){
+  const el = document.getElementById('resultados');
+  el.innerHTML = '<div class="empty">Buscando...</div>';
+  try{
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=15`;
+    const res = await fetch(url);
+    const data = await res.json();
+    ultimaBusquedaComida = (data.products||[]).filter(p=>p.product_name && p.nutriments && p.nutriments['energy-kcal_100g']);
+    if(ultimaBusquedaComida.length===0){ el.innerHTML = '<div class="empty">Sin resultados, probá cargarlo manual</div>'; return; }
+    el.innerHTML = ultimaBusquedaComida.map((p,i)=>`<div class="food-result" data-food-idx="${i}"><div class="fname">${p.product_name}${p.brands ? ' · '+p.brands.split(',')[0] : ''}</div><div class="fmacros">${Math.round(p.nutriments['energy-kcal_100g']||0)} kcal /100g · P${Math.round(p.nutriments['proteins_100g']||0)} C${Math.round(p.nutriments['carbohydrates_100g']||0)} G${Math.round(p.nutriments['fat_100g']||0)}</div></div>`).join('');
+    document.querySelectorAll('[data-food-idx]').forEach(elm=>{ elm.addEventListener('click', ()=> abrirCantidad(ultimaBusquedaComida[+elm.dataset.foodIdx])); });
+  }catch(e){ el.innerHTML = '<div class="empty">No se pudo conectar. Probá cargarlo manual.</div>'; }
+}
+async function buscarPorCodigoBarras(code){
+  try{
+    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(code)}.json`);
+    const data = await res.json();
+    if(data.status===1 && data.product){ abrirCantidad(data.product); } else { alert('No se encontró ningún producto con ese código.'); }
+  }catch(e){ alert('No se pudo conectar a la base de datos.'); }
+}
+function abrirCantidad(p){
+  const modal = document.getElementById('cantidadModal');
+  const n = p.nutriments || {};
+  modal.innerHTML = `<div class="card accent"><h3>${p.product_name||'Producto'}</h3><label>Cantidad (gramos)</label><input type="number" id="cantGramos" value="100"><button class="btn-primary" id="confirmarCant">Agregar a hoy</button></div>`;
+  document.getElementById('confirmarCant').addEventListener('click', async ()=>{
+    const g = parseFloat(document.getElementById('cantGramos').value) || 100;
+    const factor = g/100;
+    const item = {nombre:`${p.product_name||'Producto'} (${g}g)`, kcal:(n['energy-kcal_100g']||0)*factor, prot:(n['proteins_100g']||0)*factor, carb:(n['carbohydrates_100g']||0)*factor, grasa:(n['fat_100g']||0)*factor};
+    const dia = await loadDia(today); dia.comidas.push(item); await saveDia(today, dia); render();
+  });
+}
+
+// ---------- PROGRESO ----------
+async function renderProgreso(){
+  const pesos = await loadAllPesos();
+  const dia = await loadDia(today);
+  const actual = pesos.length ? pesos[pesos.length-1].peso : perfil.peso_inicial;
+  const diff = (actual - perfil.peso_inicial).toFixed(1);
+  let chartSvg = '<div class="empty">Cargá tu peso para ver el gráfico</div>';
+  if(pesos.length>=2){
+    const w=440,h=140,pad=20; const vals = pesos.map(p=>p.peso); const min = Math.min(...vals)-0.5, max = Math.max(...vals)+0.5;
+    const pts = pesos.map((p,i)=>{ const x=pad+i*((w-2*pad)/(pesos.length-1)); const y=h-pad-((p.peso-min)/(max-min))*(h-2*pad); return `${x},${y}`; }).join(' ');
+    chartSvg = `<div class="chart-wrap"><svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><polyline points="${pts}" fill="none" stroke="var(--primary)" stroke-width="2.5"/>${pesos.map((p,i)=>{const x=pad+i*((w-2*pad)/(pesos.length-1));const y=h-pad-((p.peso-min)/(max-min))*(h-2*pad);return `<circle cx="${x}" cy="${y}" r="3" fill="var(--primary)"/>`;}).join('')}</svg></div>`;
+  }
+  return `
+    <div class="card accent"><h3>Peso de hoy</h3><div class="row"><input type="number" step="0.1" id="pesoHoyInput" placeholder="kg" value="${dia.peso||''}"><button class="btn-primary btn-icon" id="guardarPesoHoy">Guardar</button></div></div>
+    <div class="card"><h3>Resumen</h3><div class="grid2"><div><div class="bar-label"><span>Inicial</span></div><div class="bignum" style="font-size:22px;">${perfil.peso_inicial} kg</div></div><div><div class="bar-label"><span>Actual</span></div><div class="bignum" style="font-size:22px;">${actual} kg</div></div></div><div class="divider"></div><div class="bar-label"><span>Cambio total</span><b style="color:${diff<0?'var(--primary)':'var(--danger)'}">${diff>0?'+':''}${diff} kg</b></div></div>
+    <div class="card"><h3>Evolución</h3>${chartSvg}</div>
+  `;
+}
+
+// ---------- PERFIL ----------
+async function renderPerfil(){
+  return `
+    <div class="card"><h3>Tu perfil y objetivo</h3>
+      <div class="grid2">
+        <div><label>Altura (cm)</label><input type="number" id="perfAltura" value="${perfil.altura}"></div>
+        <div><label>Edad</label><input type="number" id="perfEdad" value="${perfil.edad}"></div>
+        <div><label>Kcal objetivo</label><input type="number" id="perfKcal" value="${perfil.kcal}"></div>
+        <div><label>Proteína (g)</label><input type="number" id="perfProt" value="${perfil.prot}"></div>
+        <div><label>Carbos (g)</label><input type="number" id="perfCarb" value="${perfil.carb}"></div>
+        <div><label>Grasa (g)</label><input type="number" id="perfGrasa" value="${perfil.grasa}"></div>
+      </div>
+      <button class="btn-primary" id="guardarPerfil">Actualizar perfil</button>
+    </div>
+    <div class="card"><h3>Apariencia</h3><button class="btn-ghost" style="width:100%;" id="toggleTema">Cambiar a modo ${tema==='dark'?'claro':'oscuro'}</button></div>
+    <div class="card"><h3>Favoritos</h3>
+      ${favoritos.length===0 ? '<div class="empty">Todavía no marcaste favoritos</div>' :
+        favoritos.map(id=>{const e=EJERCICIOS.find(x=>x.id===id); return e?`<div class="ex-card" data-abrir-ejercicio-perfil="${e.id}"><div class="ex-info"><div class="ex-name">${e.nombre}</div><div class="ex-meta">${e.grupo}</div></div></div>`:'';}).join('')}
+    </div>
+  `;
+}
+
+// ---------- HANDLERS ----------
+function attachHandlers(){
+  document.querySelectorAll('.navbtn').forEach(b=>{ b.onclick = ()=>{ currentTab=b.dataset.tab; ejercicioAbierto=null; render(); }; });
+
+  const irRutinas = document.getElementById('irRutinas');
+  if(irRutinas) irRutinas.onclick = ()=>{ currentTab='entrenar'; entrenarSubtab='rutina'; render(); };
+
+  document.querySelectorAll('[data-entrenar-sub]').forEach(b=>{ b.onclick = ()=>{ entrenarSubtab=b.dataset.entrenarSub; render(); }; });
+
+  const buscarEjercicio = document.getElementById('buscarEjercicio');
+  if(buscarEjercicio){ buscarEjercicio.oninput = (e)=>{ busquedaEjercicio = e.target.value; }; buscarEjercicio.addEventListener('keydown', e=>{ if(e.key==='Enter'){ render(); } }); buscarEjercicio.addEventListener('blur', ()=> render()); }
+  document.querySelectorAll('[data-grupo]').forEach(c=>{ c.onclick = ()=>{ filtroGrupo = c.dataset.grupo; render(); }; });
+
+  document.querySelectorAll('[data-abrir-ejercicio]').forEach(c=>{ c.onclick = ()=>{ ejercicioAbierto = c.dataset.abrirEjercicio; render().then(()=>cargarGifDetalle(ejercicioAbierto)); }; });
+  document.querySelectorAll('[data-abrir-ejercicio-perfil]').forEach(c=>{ c.onclick = ()=>{ currentTab='entrenar'; entrenarSubtab='biblioteca'; ejercicioAbierto = c.dataset.abrirEjercicioPerfil; render().then(()=>cargarGifDetalle(ejercicioAbierto)); }; });
+  const volverBiblioteca = document.getElementById('volverBiblioteca');
+  if(volverBiblioteca) volverBiblioteca.onclick = ()=>{ ejercicioAbierto=null; render(); };
+  document.querySelectorAll('[data-fav]').forEach(b=>{ b.onclick = async (ev)=>{ ev.stopPropagation(); await toggleFavorito(b.dataset.fav); render().then(()=>{ if(ejercicioAbierto) cargarGifDetalle(ejercicioAbierto); }); }; });
+
+  // Rutinas
+  const nuevaRutina = document.getElementById('nuevaRutina');
+  if(nuevaRutina) nuevaRutina.onclick = ()=>{ construyendoRutina = {id:'rut_'+Date.now(), nombre:'', dias:[]}; render(); };
+  const toggleGenerador = document.getElementById('toggleGenerador');
+  if(toggleGenerador) toggleGenerador.onclick = ()=>{ mostrandoGenerador = !mostrandoGenerador; render(); };
+  const confirmarGenerar = document.getElementById('confirmarGenerar');
+  if(confirmarGenerar) confirmarGenerar.onclick = async ()=>{
+    const opts = { dias: parseInt(document.getElementById('genDias').value), objetivo: document.getElementById('genObjetivo').value, nivel: document.getElementById('genNivel').value, duracion: parseInt(document.getElementById('genDuracion').value), prioridad: document.getElementById('genPrioridad').value };
+    const nueva = generarRutina(opts);
+    const rutinas = (await getKey('rutinas')) || []; rutinas.push(nueva); await setKey('rutinas', rutinas);
+    mostrandoGenerador = false; render();
+  };
+  document.querySelectorAll('[data-usar-plantilla]').forEach(b=>{ b.onclick = async ()=>{
+    const p = PLANTILLAS.find(x=>x.id===b.dataset.usarPlantilla); const clone = JSON.parse(JSON.stringify(p)); clone.id = 'rut_'+Date.now();
+    const rutinas = (await getKey('rutinas')) || []; rutinas.push(clone); await setKey('rutinas', rutinas); render();
+  }; });
+  document.querySelectorAll('[data-eliminar-rutina]').forEach(b=>{ b.onclick = async ()=>{
+    const rutinas = (await getKey('rutinas')) || []; await setKey('rutinas', rutinas.filter(r=>r.id!==b.dataset.eliminarRutina)); render();
+  }; });
+  document.querySelectorAll('[data-empezar]').forEach(b=>{ b.onclick = async ()=>{
+    const [rid, diIdx] = b.dataset.empezar.split(':'); const rutinas = (await getKey('rutinas')) || []; const rutina = rutinas.find(r=>r.id===rid);
+    if(rutina) await iniciarEntrenamiento(rutina, parseInt(diIdx));
+  }; });
+
+  // Builder
+  const cancelarBuilder = document.getElementById('cancelarBuilder');
+  if(cancelarBuilder) cancelarBuilder.onclick = ()=>{ construyendoRutina = null; render(); };
+  const nombreRutinaInput = document.getElementById('nombreRutinaInput');
+  if(nombreRutinaInput) nombreRutinaInput.oninput = (e)=>{ construyendoRutina.nombre = e.target.value; };
+  document.querySelectorAll('[data-dia-nombre]').forEach(inp=>{ inp.oninput = (e)=>{ construyendoRutina.dias[+inp.dataset.diaNombre].nombre = e.target.value; }; });
+  document.querySelectorAll('[data-eliminar-dia]').forEach(b=>{ b.onclick = ()=>{ construyendoRutina.dias.splice(+b.dataset.eliminarDia,1); render(); }; });
+  document.querySelectorAll('[data-target-dia]').forEach(inp=>{ inp.oninput = (e)=>{ construyendoRutina.dias[+inp.dataset.targetDia].ejercicios[+inp.dataset.targetEx].target = e.target.value; }; });
+  document.querySelectorAll('[data-mover]').forEach(b=>{ b.onclick = ()=>{
+    const [di,ei,dir] = b.dataset.mover.split(':').map(Number); const arr = construyendoRutina.dias[di].ejercicios; const nuevo = ei+dir;
+    if(nuevo<0 || nuevo>=arr.length) return; [arr[ei],arr[nuevo]] = [arr[nuevo],arr[ei]]; render();
+  }; });
+  document.querySelectorAll('[data-quitar-ex]').forEach(b=>{ b.onclick = ()=>{ const [di,ei] = b.dataset.quitarEx.split(':').map(Number); construyendoRutina.dias[di].ejercicios.splice(ei,1); render(); }; });
+  document.querySelectorAll('[data-agregar-ex-dia]').forEach(b=>{ b.onclick = ()=>{ pickerParaDia = +b.dataset.agregarExDia; render(); }; });
+  const agregarDia = document.getElementById('agregarDia');
+  if(agregarDia) agregarDia.onclick = ()=>{ construyendoRutina.dias.push({nombre:'Día '+(construyendoRutina.dias.length+1), ejercicios:[]}); render(); };
+  const guardarRutina = document.getElementById('guardarRutina');
+  if(guardarRutina) guardarRutina.onclick = async ()=>{
+    if(!construyendoRutina.nombre) construyendoRutina.nombre = 'Mi rutina';
+    const rutinas = (await getKey('rutinas')) || []; rutinas.push(construyendoRutina); await setKey('rutinas', rutinas);
+    construyendoRutina = null; render();
+  };
+  const cerrarPicker = document.getElementById('cerrarPicker');
+  if(cerrarPicker) cerrarPicker.onclick = ()=>{ pickerParaDia = null; render(); };
+  document.querySelectorAll('[data-pick-ejercicio]').forEach(c=>{ c.onclick = ()=>{
+    construyendoRutina.dias[pickerParaDia].ejercicios.push({exId:c.dataset.pickEjercicio, target:'3x10'}); pickerParaDia = null; render();
+  }; });
+
+  // Modo entrenamiento
+  const completarSerie = document.getElementById('completarSerie');
+  if(completarSerie) completarSerie.onclick = ()=>{
+    const kg = parseFloat(document.getElementById('setKg').value) || 0;
+    const reps = parseInt(document.getElementById('setReps').value) || 0;
+    const rirVal = document.getElementById('setRir').value;
+    const rir = rirVal===''? null : parseInt(rirVal);
+    if(reps<=0) return;
+    sessionState.ejercicios[sessionState.idx].sets.push({kg,reps,rir});
+    iniciarDescanso(sessionState.descansoSeg || 90);
+    render();
+  };
+  document.querySelectorAll('[data-descanso]').forEach(b=>{ b.onclick = ()=>{ iniciarDescanso(parseInt(b.dataset.descanso)); }; });
+  const exAnterior = document.getElementById('exAnterior');
+  if(exAnterior) exAnterior.onclick = ()=>{ if(sessionState.idx>0){ sessionState.idx--; render(); } };
+  const exSiguiente = document.getElementById('exSiguiente');
+  if(exSiguiente) exSiguiente.onclick = ()=>{ if(sessionState.idx < sessionState.ejercicios.length-1){ sessionState.idx++; render(); } };
+  const finalizarEntreno = document.getElementById('finalizarEntreno');
+  if(finalizarEntreno) finalizarEntreno.onclick = ()=> finalizarEntrenamiento();
+
+  // Historial
+  document.querySelectorAll('[data-toggle-sesion]').forEach(el=>{ el.onclick = ()=>{ const i = +el.dataset.toggleSesion; sesionAbiertaIdx = sesionAbiertaIdx===i? null : i; render(); }; });
+
+  // Nutrición
+  const guardarPesoHoy = document.getElementById('guardarPesoHoy');
+  if(guardarPesoHoy) guardarPesoHoy.onclick = async ()=>{ const v = parseFloat(document.getElementById('pesoHoyInput').value); if(!v) return; const dia = await loadDia(today); dia.peso = v; await saveDia(today, dia); render(); };
+  document.querySelectorAll('[data-del-comida]').forEach(b=>{ b.onclick = async ()=>{ const dia = await loadDia(today); dia.comidas.splice(+b.dataset.delComida,1); await saveDia(today, dia); render(); }; });
+  const buscarBtn = document.getElementById('buscarBtn');
+  if(buscarBtn) buscarBtn.onclick = ()=>{ const q = document.getElementById('buscarInput').value.trim(); if(q) buscarAlimento(q); };
+  const buscarInput = document.getElementById('buscarInput');
+  if(buscarInput) buscarInput.addEventListener('keydown', e=>{ if(e.key==='Enter'){ e.preventDefault(); buscarBtn.click(); } });
+  const barcodeBtn = document.getElementById('barcodeBtn');
+  if(barcodeBtn) barcodeBtn.onclick = ()=>{ const c = document.getElementById('barcodeInput').value.trim(); if(c) buscarPorCodigoBarras(c); };
+  const manAgregar = document.getElementById('manAgregar');
+  if(manAgregar) manAgregar.onclick = async ()=>{
+    const nombre = document.getElementById('manNombre').value.trim();
+    const kcal = parseFloat(document.getElementById('manKcal').value)||0;
+    const prot = parseFloat(document.getElementById('manProt').value)||0;
+    const carb = parseFloat(document.getElementById('manCarb').value)||0;
+    const grasa = parseFloat(document.getElementById('manGrasa').value)||0;
+    if(!nombre || !kcal) return;
+    const dia = await loadDia(today); dia.comidas.push({nombre,kcal,prot,carb,grasa}); await saveDia(today, dia); render();
+  };
+
+  // Perfil
+  const guardarPerfil = document.getElementById('guardarPerfil');
+  if(guardarPerfil) guardarPerfil.onclick = async ()=>{
+    perfil.altura = parseFloat(document.getElementById('perfAltura').value)||perfil.altura;
+    perfil.edad = parseFloat(document.getElementById('perfEdad').value)||perfil.edad;
+    perfil.kcal = parseFloat(document.getElementById('perfKcal').value)||perfil.kcal;
+    perfil.prot = parseFloat(document.getElementById('perfProt').value)||perfil.prot;
+    perfil.carb = parseFloat(document.getElementById('perfCarb').value)||perfil.carb;
+    perfil.grasa = parseFloat(document.getElementById('perfGrasa').value)||perfil.grasa;
+    await setKey('perfil', perfil); render();
+  };
+  const toggleTema = document.getElementById('toggleTema');
+  if(toggleTema) toggleTema.onclick = async ()=>{ tema = tema==='dark' ? 'light' : 'dark'; document.body.dataset.theme = tema; await setKey('tema', tema); render(); };
+}
+
+async function cargarGifDetalle(id){
+  const e = EJERCICIOS.find(x=>x.id===id); if(!e) return;
+  const box = document.getElementById('gifBox'); if(!box) return;
+  const url = await getExerciseGif(e.nombre);
+  if(url){ box.innerHTML = `<img src="${url}" alt="${e.nombre}">`; }
+  else { box.innerHTML = `<div class="placeholder">GIF no disponible todavía para este ejercicio.<br>Buscalo en YouTube: "${e.nombre}"</div>`; }
+}
+
+// ---------- INIT ----------
+(async function init(){
+  await loadPerfil();
+  await loadFavoritos();
+  tema = (await getKey('tema')) || 'dark';
+  document.body.dataset.theme = tema;
+  await render();
+})();
+</script>
+</body>
+</html>
