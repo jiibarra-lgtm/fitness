@@ -182,7 +182,7 @@
 ===================================================================== */
 
 // ============ CONFIG ============
-const DEFAULT_PERFIL = { nombre:'Juani', peso_inicial: 96, altura: 192, edad: 19, fecha_inicio: new Date().toISOString().slice(0,10), kcal: 2200, prot: 210, carb: 170, grasa: 75, unidad:'kg' };
+const DEFAULT_PERFIL = { nombre:'Juani', peso_inicial: 96, altura: 192, edad: 19, fecha_inicio: new Date().toISOString().slice(0,10), kcal: 2200, prot: 210, carb: 170, grasa: 75, unidad:'kg', diasEntrenamiento: 4 };
 const CATEGORIAS_COMIDA = [ {id:'desayuno', label:'Desayuno'}, {id:'almuerzo', label:'Almuerzo'}, {id:'merienda', label:'Merienda'}, {id:'cena', label:'Cena'}, {id:'snacks', label:'Snacks'} ];
 
 // ============ DATA: EJERCICIOS ============
@@ -274,6 +274,8 @@ let favoritos = [];
 let construyendoRutina = null;
 let pickerParaDia = null;
 let mostrandoPickerWorkout = false;
+let mostrandoPickerBuilderSwap = false;
+let swapContext = null; // {modo:'workout'} | {modo:'builder', di, ei}
 let mostrandoGenerador = false;
 let sessionState = null;
 let sesionAbiertaIdx = null;
@@ -307,6 +309,29 @@ function formatMMSS(s){ if(s<0)s=0; const m=Math.floor(s/60); const sec=s%60; re
 function kgToLb(kg){ return Math.round(kg*2.20462*10)/10; }
 function fmtPeso(kg){ if(kg==null) return '—'; return perfil.unidad==='lb' ? `${kgToLb(kg)} lb` : `${kg} kg`; }
 function parseSetsCount(target){ const m = String(target).match(/^(\d+)\s*x/i); return m ? parseInt(m[1]) : 3; }
+function getExById(id){ return EJERCICIOS.find(e=>e.id===id); }
+function obtenerSimilares(exId){
+  const base = getExById(exId);
+  if(!base) return [];
+  return EJERCICIOS.filter(o=> o.id!==exId && o.grupo===base.grupo && (o.patron===base.patron || (base.variantes||[]).some(v=>v.toLowerCase()===o.nombre.toLowerCase())));
+}
+function aplicarSeleccionEjercicio(id){
+  const info = getExById(id);
+  if(!info) return;
+  if(swapContext && swapContext.modo==='workout'){
+    const ex = sessionState.ejercicios[sessionState.idx];
+    ex.exId = info.id; ex.nombre = info.nombre; ex.sets = [];
+    swapContext = null; mostrandoPickerWorkout = false; render(); showToast(`Cambiado a ${info.nombre}`, 'success'); return;
+  }
+  if(swapContext && swapContext.modo==='builder'){
+    construyendoRutina.dias[swapContext.di].ejercicios[swapContext.ei].exId = info.id;
+    swapContext = null; mostrandoPickerBuilderSwap = false; render(); return;
+  }
+  if(pickerParaDia !== null){
+    construyendoRutina.dias[pickerParaDia].ejercicios.push({exId:info.id, target:'3x10'});
+    pickerParaDia = null; render(); return;
+  }
+}
 function listaFiltrada(){
   return EJERCICIOS.filter(e=>{
     const okGrupo = filtroGrupo==='todos' || e.grupo===filtroGrupo;
@@ -344,17 +369,39 @@ function iniciarDescanso(seg){
 }
 
 // ============ GIF (ExerciseDB OSS, gratis, sin key) ============
+// El endpoint real usa el parámetro "search" (no "q"). Probamos varias
+// variantes de URL y de nombre por si una falla, antes de rendirnos.
 const gifCache = {};
+function extraerItemGif(data){
+  const candidatos = (data && (data.data || data.exercises || data.results || (Array.isArray(data)?data:null))) || [];
+  const item = Array.isArray(candidatos) ? candidatos[0] : null;
+  if(!item) return null;
+  return item.gifUrl || item.gif_url || null;
+}
+async function intentarFetchGif(url){
+  try{
+    const res = await fetch(url);
+    if(!res.ok) return null;
+    const data = await res.json();
+    return extraerItemGif(data);
+  }catch(e){ return null; }
+}
 async function getExerciseGif(nombreEs){
   if(gifCache[nombreEs] !== undefined) return gifCache[nombreEs];
   const nombreEn = TRADUCCION_GIF[nombreEs] || nombreEs;
-  try{
-    const res = await fetch(`https://oss.exercisedb.dev/api/v1/exercises/search?q=${encodeURIComponent(nombreEn)}&limit=1`);
-    const data = await res.json();
-    const item = (data.data && data.data[0]) || (data.exercises && data.exercises[0]) || (Array.isArray(data) && data[0]) || null;
-    const url = item ? (item.gifUrl || item.gif_url || null) : null;
-    gifCache[nombreEs] = url; return url;
-  }catch(e){ gifCache[nombreEs] = null; return null; }
+  const nombreCorto = nombreEn.split(' ').slice(0,2).join(' ');
+  const intentos = [
+    `https://oss.exercisedb.dev/api/v1/exercises/search?search=${encodeURIComponent(nombreEn)}&limit=3`,
+    `https://oss.exercisedb.dev/api/v1/exercises?search=${encodeURIComponent(nombreEn)}&limit=3`,
+    `https://oss.exercisedb.dev/api/v1/exercises/search?search=${encodeURIComponent(nombreCorto)}&limit=3`,
+    `https://oss.exercisedb.dev/api/v1/exercises/name/${encodeURIComponent(nombreEn)}`,
+  ];
+  for(const url of intentos){
+    const gif = await intentarFetchGif(url);
+    if(gif){ gifCache[nombreEs] = gif; return gif; }
+  }
+  gifCache[nombreEs] = null;
+  return null;
 }
 
 // ============ RENDER ROOT ============
@@ -388,7 +435,18 @@ async function renderInicio(){
   const dia = await loadDia(today);
   const tot = dia.comidas.reduce((a,c)=>({kcal:a.kcal+c.kcal, prot:a.prot+c.prot}), {kcal:0,prot:0});
   const {racha, semana, totalEntrenamientos} = await calcularRacha();
-  const rutinas = (await getKey('rutinas')) || [];
+  let rutinas = (await getKey('rutinas')) || [];
+  if(rutinas.length===0){
+    const yaCreadaAntes = await getKey('auto_rutina_creada');
+    if(!yaCreadaAntes){
+      const nueva = generarRutina({dias: perfil.diasEntrenamiento||4, objetivo:'recomp', nivel:'intermedio', duracion:60, prioridad:'ninguna'});
+      nueva.nombre = 'Tu rutina recomendada';
+      rutinas = [nueva];
+      await setKey('rutinas', rutinas);
+      await setKey('auto_rutina_creada', true);
+      showToast('Te armamos una rutina para arrancar — la podés editar cuando quieras', 'success');
+    }
+  }
   const pesos = await loadAllPesos();
   const pesoActual = pesos.length ? pesos[pesos.length-1].peso : perfil.peso_inicial;
   const pesoAnterior = pesos.length>1 ? pesos[pesos.length-2].peso : perfil.peso_inicial;
@@ -448,8 +506,27 @@ async function renderInicio(){
 }
 
 // ============ ENTRENAR ============
+function renderSimilares(exId){
+  const base = getExById(exId);
+  const lista = obtenerSimilares(exId);
+  return `
+    <button class="backbtn" id="cerrarSimilares">‹ Volver</button>
+    <div class="card accent">
+      <h3>Cambiar "${base.nombre}"</h3>
+      <div class="ex-meta" style="margin-bottom:12px;">Mismo grupo muscular y patrón de movimiento — reemplazo directo sin romper tu plan.</div>
+      ${lista.length===0 ? '<div class="empty">No encontré una variante directa para este ejercicio.</div>' :
+        lista.map(e=>`<div class="ex-card" data-pick-similar="${e.id}"><div class="ex-avatar">${ICONOS_GRUPO[e.grupo]||'🏋️'}</div><div class="ex-info"><div class="ex-name">${e.nombre}</div><div class="ex-meta">${e.equipo} · ${e.patron}</div></div></div>`).join('')
+      }
+    </div>
+    <button class="btn-ghost" style="width:100%;" id="verTodaBiblioteca">Ver toda la biblioteca en su lugar</button>
+  `;
+}
 async function renderEntrenar(){
-  if(sessionState){ if(mostrandoPickerWorkout) return renderPickerEjercicio(); return renderEntrenoActivo(); }
+  if(sessionState){
+    if(swapContext && swapContext.modo==='workout' && !mostrandoPickerWorkout) return renderSimilares(sessionState.ejercicios[sessionState.idx].exId);
+    if(mostrandoPickerWorkout) return renderPickerEjercicio();
+    return renderEntrenoActivo();
+  }
   if(ejercicioAbierto) return renderDetalleEjercicio(ejercicioAbierto);
   let body = '';
   if(entrenarSubtab==='biblioteca') body = renderBiblioteca();
@@ -501,6 +578,10 @@ function renderDetalleEjercicio(id){
 
 // ============ RUTINAS ============
 async function renderRutinas(){
+  if(construyendoRutina && swapContext && swapContext.modo==='builder'){
+    if(mostrandoPickerBuilderSwap) return renderPickerEjercicio();
+    return renderSimilares(construyendoRutina.dias[swapContext.di].ejercicios[swapContext.ei].exId);
+  }
   if(pickerParaDia !== null) return renderPickerEjercicio();
   if(construyendoRutina) return renderBuilderRutina();
   const rutinas = (await getKey('rutinas')) || [];
@@ -580,6 +661,7 @@ function renderBuilderRutina(){
           <div class="exrow-mini">
             <span>${info?info.nombre:ex.exId}</span>
             <input type="text" data-target-dia="${di}" data-target-ex="${ei}" value="${ex.target}">
+            <button class="btn-ghost btn-sm" data-swap-similar="${di}:${ei}">⇄</button>
             <button class="btn-ghost btn-sm" data-mover="${di}:${ei}:-1">↑</button>
             <button class="btn-ghost btn-sm" data-mover="${di}:${ei}:1">↓</button>
             <button class="btn-danger btn-sm" data-quitar-ex="${di}:${ei}">✕</button>
@@ -956,6 +1038,7 @@ function attachHandlers(){
   }; });
   document.querySelectorAll('[data-quitar-ex]').forEach(b=>{ b.onclick = ()=>{ const [di,ei] = b.dataset.quitarEx.split(':').map(Number); construyendoRutina.dias[di].ejercicios.splice(ei,1); render(); }; });
   document.querySelectorAll('[data-agregar-ex-dia]').forEach(b=>{ b.onclick = ()=>{ pickerParaDia = +b.dataset.agregarExDia; render(); }; });
+  document.querySelectorAll('[data-swap-similar]').forEach(b=>{ b.onclick = ()=>{ const [di,ei] = b.dataset.swapSimilar.split(':').map(Number); swapContext = {modo:'builder', di, ei}; render(); }; });
   const agregarDia = document.getElementById('agregarDia');
   if(agregarDia) agregarDia.onclick = ()=>{ construyendoRutina.dias.push({nombre:'Día '+(construyendoRutina.dias.length+1), ejercicios:[]}); render(); };
   const guardarRutina = document.getElementById('guardarRutina');
@@ -972,11 +1055,19 @@ function attachHandlers(){
     construyendoRutina = null; render(); showToast('Rutina guardada ✓', 'success');
   };
   const cerrarPicker = document.getElementById('cerrarPicker');
-  if(cerrarPicker) cerrarPicker.onclick = ()=>{ pickerParaDia = null; mostrandoPickerWorkout = false; render(); };
-  document.querySelectorAll('[data-pick-ejercicio]').forEach(c=>{ c.onclick = ()=>{
-    if(pickerParaDia !== null){ construyendoRutina.dias[pickerParaDia].ejercicios.push({exId:c.dataset.pickEjercicio, target:'3x10'}); pickerParaDia = null; render(); }
-    else if(mostrandoPickerWorkout){ const info = EJERCICIOS.find(e=>e.id===c.dataset.pickEjercicio); const ex = sessionState.ejercicios[sessionState.idx]; ex.exId = info.id; ex.nombre = info.nombre; ex.sets = []; mostrandoPickerWorkout = false; render(); }
-  }; });
+  if(cerrarPicker) cerrarPicker.onclick = ()=>{ pickerParaDia = null; mostrandoPickerWorkout = false; mostrandoPickerBuilderSwap = false; swapContext = null; render(); };
+  document.querySelectorAll('[data-pick-ejercicio]').forEach(c=>{ c.onclick = ()=> aplicarSeleccionEjercicio(c.dataset.pickEjercicio); });
+
+  // Similares (cambiar por ejercicio equivalente)
+  const cerrarSimilares = document.getElementById('cerrarSimilares');
+  if(cerrarSimilares) cerrarSimilares.onclick = ()=>{ swapContext = null; render(); };
+  document.querySelectorAll('[data-pick-similar]').forEach(c=>{ c.onclick = ()=> aplicarSeleccionEjercicio(c.dataset.pickSimilar); });
+  const verTodaBiblioteca = document.getElementById('verTodaBiblioteca');
+  if(verTodaBiblioteca) verTodaBiblioteca.onclick = ()=>{
+    if(swapContext && swapContext.modo==='workout') mostrandoPickerWorkout = true;
+    else if(swapContext && swapContext.modo==='builder') mostrandoPickerBuilderSwap = true;
+    render();
+  };
 
   // Modo entrenamiento
   const copiarAnterior = document.getElementById('copiarAnterior');
@@ -985,7 +1076,7 @@ function attachHandlers(){
     if(s){ document.getElementById('setKg').value = s.kg; document.getElementById('setReps').value = s.reps; if(s.rir!=null) document.getElementById('setRir').value = s.rir; }
   };
   const reemplazarEjercicio = document.getElementById('reemplazarEjercicio');
-  if(reemplazarEjercicio) reemplazarEjercicio.onclick = ()=>{ mostrandoPickerWorkout = true; render(); };
+  if(reemplazarEjercicio) reemplazarEjercicio.onclick = ()=>{ swapContext = {modo:'workout'}; mostrandoPickerWorkout = false; render(); };
   const notasEjercicio = document.getElementById('notasEjercicio');
   if(notasEjercicio) notasEjercicio.oninput = (e)=>{ sessionState.ejercicios[sessionState.idx].notas = e.target.value; };
   const completarSerie = document.getElementById('completarSerie');
