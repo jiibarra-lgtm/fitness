@@ -280,24 +280,47 @@ let mostrandoGenerador = false;
 let sessionState = null;
 let sesionAbiertaIdx = null;
 let filtroTiempoProgreso = 'todo';
+let mostrarPreviaEntrenoHoy = false;
 const today = new Date().toISOString().slice(0,10);
 
 // ============ STORAGE ============
-async function getKey(key){ try{ const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; } catch(e){ return null; } }
-async function setKey(key, value){ try{ await window.storage.set(key, JSON.stringify(value)); } catch(e){ console.error('storage set fail', key, e); } }
+// window.storage solo existe dentro de Claude.ai. Fuera de ahí (ej. este
+// sitio desplegado en Vercel) no existe, así que usamos localStorage con
+// la misma forma de API para que la app funcione igual en los dos lugares.
+const STORAGE_PREFIX = 'forja:';
+const storageBackend = (typeof window.storage === 'object' && window.storage && typeof window.storage.get === 'function')
+  ? window.storage
+  : {
+      async get(key){ const v = localStorage.getItem(STORAGE_PREFIX+key); return v!==null ? {key, value:v} : null; },
+      async set(key, value){ localStorage.setItem(STORAGE_PREFIX+key, value); return {key, value}; },
+      async delete(key){ localStorage.removeItem(STORAGE_PREFIX+key); return {key, deleted:true}; },
+      async list(prefix){
+        const keys = [];
+        for(let i=0;i<localStorage.length;i++){
+          const k = localStorage.key(i);
+          if(k && k.startsWith(STORAGE_PREFIX)){
+            const bare = k.slice(STORAGE_PREFIX.length);
+            if(!prefix || bare.startsWith(prefix)) keys.push(bare);
+          }
+        }
+        return {keys};
+      }
+    };
+async function getKey(key){ try{ const r = await storageBackend.get(key); return r ? JSON.parse(r.value) : null; } catch(e){ return null; } }
+async function setKey(key, value){ try{ await storageBackend.set(key, JSON.stringify(value)); } catch(e){ console.error('storage set fail', key, e); } }
 async function loadPerfil(){ const p = await getKey('perfil'); perfil = p ? {...DEFAULT_PERFIL, ...p} : {...DEFAULT_PERFIL}; if(!p) await setKey('perfil', perfil); }
 async function loadFavoritos(){ favoritos = (await getKey('favoritos_ejercicios')) || []; }
 async function toggleFavorito(id){ if(favoritos.includes(id)) favoritos = favoritos.filter(f=>f!==id); else favoritos.push(id); await setKey('favoritos_ejercicios', favoritos); }
 async function loadDia(date){ return (await getKey('dia:'+date)) || {comidas:[], peso:null}; }
 async function saveDia(date, data){ await setKey('dia:'+date, data); }
 async function loadAllPesos(){
-  try{ const list = await window.storage.list('dia:'); if(!list || !list.keys) return [];
+  try{ const list = await storageBackend.list('dia:'); if(!list || !list.keys) return [];
     const out = []; for(const k of list.keys){ const d = await getKey(k); if(d && d.peso){ out.push({fecha:k.replace('dia:',''), peso:d.peso}); } }
     return out.sort((a,b)=>a.fecha.localeCompare(b.fecha));
   }catch(e){ return []; }
 }
 async function cargarSesiones(){
-  try{ const list = await window.storage.list('sesion:'); if(!list || !list.keys) return [];
+  try{ const list = await storageBackend.list('sesion:'); if(!list || !list.keys) return [];
     const out = []; for(const k of list.keys){ const s = await getKey(k); if(s) out.push(s); }
     return out.sort((a,b)=> (b.fecha||'').localeCompare(a.fecha||''));
   }catch(e){ return []; }
@@ -466,6 +489,8 @@ async function renderInicio(){
         <h3>Entrenamiento de hoy</h3>
         <div style="font-size:19px; font-weight:800; margin-bottom:4px;">${diaHoy.nombre}</div>
         <div class="ex-meta" style="margin-bottom:14px;">${rutina.nombre} · ${diaHoy.ejercicios.length} ejercicios · ${totalSeries} series · ≈ ${estMin} min</div>
+        <button class="btn-ghost" style="width:100%; margin-bottom:10px;" id="togglePreviaHoy">${mostrarPreviaEntrenoHoy ? '▴ Ocultar ejercicios' : '▾ Ver ejercicios'}</button>
+        ${mostrarPreviaEntrenoHoy ? `<div style="margin-bottom:14px;">${diaHoy.ejercicios.map(e=>{ const info=getExById(e.exId); return `<div class="exrow-mini"><span>${info?info.nombre:e.exId}</span><span class="ex-meta">${e.target}</span></div>`; }).join('')}</div>` : ''}
         <button class="btn-primary" data-empezar="${rutina.id}:${diaIdx}">▶ Comenzar entrenamiento</button>
       </div>`;
   }
@@ -974,6 +999,8 @@ async function renderPerfil(){
 function attachHandlers(){
   document.querySelectorAll('.navbtn').forEach(b=>{ b.onclick = ()=>{ currentTab=b.dataset.tab; ejercicioAbierto=null; render(); }; });
 
+  const togglePreviaHoy = document.getElementById('togglePreviaHoy');
+  if(togglePreviaHoy) togglePreviaHoy.onclick = ()=>{ mostrarPreviaEntrenoHoy = !mostrarPreviaEntrenoHoy; render(); };
   const ctaCrearRutina = document.getElementById('ctaCrearRutina');
   if(ctaCrearRutina) ctaCrearRutina.onclick = ()=>{ currentTab='entrenar'; entrenarSubtab='rutina'; construyendoRutina = {id:'rut_'+Date.now(), nombre:'', dias:[]}; render(); };
   const ctaCargarPeso = document.getElementById('ctaCargarPeso');
@@ -1179,4 +1206,3 @@ async function cargarGifDetalle(id){
 </script>
 </body>
 </html>
-
